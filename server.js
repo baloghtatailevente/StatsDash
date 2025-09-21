@@ -328,5 +328,5 @@ app.get('/dashboard/admin/stations', (req, res) => {
 })
 
 // Server indítás
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Server fut a ${PORT} porton`));
