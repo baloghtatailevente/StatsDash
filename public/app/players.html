@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Játékosok - Sorverseny</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg bg-secondary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><img src="/img/logo.png" alt="Logo" width="60" height="55" class="d-inline-block align-text-top"></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" aria-current="page" href="/dashboard">Kezdőlap</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-0" href="/dashboard/station?id=xyz">Állomás</a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link disabled text-light perm-1" href="/dashboard/players">Játékosok</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link disabled text-light perm-99" href="/dashboard/players">Játékosok</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/admin/users">Felhasználók</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/admin/stations">Állomások</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/admin/statisztika">Statisztika</a>
+                </li>
+
+                <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle perm-99" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Napló
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/dashboard/admin/login-logs">Azonosítási Napló</a></li>
+                    
+                    <li><a class="dropdown-item" href="/dashboard/admin/logs">Renszer Napló</a></li>
+                </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/system">Rendszer</a>
+                </li>
+            </ul>
+            <button class="btn btn-light" id="logout" onclick="logout()">Kijelentkezés</button>
+            </div>
+        </div>
+        </nav>
+
+    <div class="container my-4">
+        <div class="row align-items-center">
+            <div class="col-md-9">
+                <input type="text" id="playerSearch" class="form-control" placeholder="Keresés játékosra...">
+            </div>
+            <div class="col-md-3 text-center">
+                <button class="btn btn-success w-100" id="addPlayerBtn">+ Új játékos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAYERS TABLE -->
+    <table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Név</th>
+            <th>Osztály</th>
+            <th>Szám</th>
+            <th>∑</th> <!-- ÚJ OSZLOP -->
+            <th>Utolsó Állomás</th>
+            <th class="perm-99">Műveletek</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td colspan="8">Betöltés...</td></tr>
+    </tbody>
+</table>
+
+    <!-- ADD PLAYER MODAL -->
+    <div class="modal fade" id="addPlayerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Új játékos hozzáadása</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPlayerForm">
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Név</label>
+                        <input type="text" class="form-control" id="addName">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="addClass" class="form-label">Osztály</label>
+                            <input type="text" class="form-control" id="addClass" required>
+                        </div>
+                        <div class="col">
+                            <label for="addNumber" class="form-label">Szám</label>
+                            <input type="text" class="form-control" id="addNumber" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button class="btn btn-success" onclick="addPlayer()">Hozzáadás</button>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- EDIT PLAYER MODAL -->
+    <div class="modal fade" id="editPlayerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Játékos szerkesztése</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editPlayerForm">
+                    <input type="hidden" id="editPlayerId">
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Név</label>
+                        <input type="text" class="form-control" id="editName">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="editClass" class="form-label">Osztály</label>
+                            <input type="text" class="form-control" id="editClass">
+                        </div>
+                        <div class="col">
+                            <label for="editNumber" class="form-label">Szám</label>
+                            <input type="text" class="form-control" id="editNumber">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPoints" class="form-label">Pontok</label>
+                        <input type="number" class="form-control" id="editPoints">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editLastStation" class="form-label">Utolsó állomás</label>
+                        <input type="text" class="form-control" id="editLastStation" placeholder="-" disabled>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+                <button class="btn btn-primary" onclick="savePlayer()">Mentés</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const logoutBtn = document.getElementById("logout");
+
+async function logout() {
+    const sessionId = localStorage.getItem('sessionId');
+    try {
+        const res = await fetch('/api/logout', {
+            method: 'POST',
+            headers: { 'Authorization': sessionId }
+        });
+        localStorage.removeItem('sessionId');
+        window.location.href = "/";
+    } catch(err) { console.error(err); alert("Hiba"); }
+}
+
+// --- INIT FUNCTION (KEPT) ---
+async function init() {
+    const sessionId = localStorage.getItem('sessionId');
+    if (!sessionId) {
+        localStorage.removeItem("sessionId");
+        window.location.href = "/";
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/me', {
+            headers: { 'Authorization': sessionId }
+        });
+        if (!res.ok) throw new Error("Nem vagy bejelentkezve");
+
+        const data = await res.json();
+
+        console.log(data.rank)
+
+        // Non-admin redirect
+        if (data.rank !== 99) {
+            if (data.rank !== 1) {
+                window.location.href = "/dashboard";
+                return;
+            }
+        }
+
+        // Permissions hide/show
+        if (data.rank == 0) document.querySelectorAll(".perm-1, .perm-99").forEach(el => el.style.display = "none");
+        else if (data.rank == 1) document.querySelectorAll(".perm-0, .perm-99").forEach(el => el.style.display = "none");
+        else if (data.rank == 99) document.querySelectorAll(".perm-0, .perm-1").forEach(el => el.style.display = "none");
+
+        if (data.assigned_station) {
+            const stationLink = document.getElementById("station-link");
+            if (stationLink) stationLink.href = `/dashboard/station?id=${data.assigned_station}`;
+        }
+    } catch (err) {
+        console.error(err);
+        localStorage.removeItem("sessionId");
+        window.location.href = "/";
+    }
+}
+init();
+
+// --- FETCH PLAYERS ---
+async function fetchPlayers(query="") {
+    try {
+        const res = await fetch('/api/players');
+        let players = await res.json();
+        if (query) {
+            const q = query.toLowerCase();
+            players = players.filter(p => 
+                (p.name || "").toLowerCase().includes(q) ||
+                (p.class || "").toLowerCase().includes(q) ||
+                (p.number || "").includes(q)
+            );
+        }
+
+        const tbody = document.querySelector("table tbody");
+        tbody.innerHTML = "";
+        players.forEach((p,i) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <th>${i+1}</th>
+                <td>${p.name}</td>
+                <td>${p.class}</td>
+                <td>${p.number}</td>
+                <td>${p.points ?? 0}</td> <!-- ÚJ -->
+                <td>${p.last_station || '-'}</td>
+                <td>
+                    <div class="btn-group perm-99">
+                        <button class="btn btn-outline-success" onclick="openEditModal('${p._id}')">
+                            <span class="material-symbols-outlined">more_horiz</span>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deletePlayer('${p._id}')">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        init()
+    } catch(err){ console.error(err); }
+}
+// --- SEARCH ---
+document.getElementById("playerSearch").addEventListener("input", e=>{
+    fetchPlayers(e.target.value);
+});
+
+// --- ADD PLAYER ---
+document.getElementById("addPlayerBtn").addEventListener("click", () => {
+    new bootstrap.Modal(document.getElementById("addPlayerModal")).show();
+});
+
+async function addPlayer() {
+    const payload = {
+        name: document.getElementById("addName").value,
+        class: document.getElementById("addClass").value,
+        number: document.getElementById("addNumber").value,
+    };
+    try {
+        const res = await fetch("/api/players", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(!res.ok) return alert(data.message || "Hiba");
+        fetchPlayers();
+        bootstrap.Modal.getInstance(document.getElementById("addPlayerModal")).hide();
+        document.getElementById("addPlayerForm").reset();
+    } catch(err) { console.error(err); alert("Hálózati hiba"); }
+}
+
+// --- EDIT PLAYER ---
+let currentPlayerId = null;
+function openEditModal(id){
+    fetch('/api/players').then(r=>r.json()).then(players=>{
+        const p = players.find(pl=>pl._id===id);
+        if(!p) return;
+        currentPlayerId = id;
+        document.getElementById("editPlayerId").value = id;
+        document.getElementById("editName").value = p.name;
+        document.getElementById("editClass").value = p.class;
+        document.getElementById("editNumber").value = p.number;
+        document.getElementById("editPoints").value = p.points ?? 0;
+        document.getElementById("editLastStation").value = p.last_station || "";
+        new bootstrap.Modal(document.getElementById("editPlayerModal")).show();
+    });
+}
+
+
+async function savePlayer(){
+    const id = document.getElementById("editPlayerId").value;
+    const payload = {
+        name: document.getElementById("editName").value,
+        class: document.getElementById("editClass").value,
+        number: document.getElementById("editNumber").value,
+        points: parseInt(document.getElementById("editPoints").value) || 0,
+        last_station: document.getElementById("editLastStation").value
+    };
+    try {
+        const res = await fetch(`/api/players/${id}`, {
+            method:"PUT",
+            headers:{ "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(!res.ok) return alert(data.message || "Hiba");
+        fetchPlayers();
+        bootstrap.Modal.getInstance(document.getElementById("editPlayerModal")).hide();
+    } catch(err){ console.error(err); alert("Hálózati hiba"); }
+}
+
+// --- DELETE PLAYER ---
+async function deletePlayer(id){
+    if(!confirm("Biztosan törlöd a játékost?")) return;
+    try {
+        const res = await fetch(`/api/players/${id}`, { method:"DELETE" });
+        const data = await res.json();
+        alert(data.message);
+        fetchPlayers();
+    } catch(err){ console.error(err); alert("Hiba törlésnél"); }
+}
+
+// --- INITIAL FETCH ---
+fetchPlayers();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

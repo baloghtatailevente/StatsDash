@@ -1,370 +1,185 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+<html lang="hu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bejelentkezés - Sorverseny</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="base.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
-      crossorigin="anonymous"
-    />
-  </head>
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+</head>
 
-  <body>
-    <div
-      class="modal fade"
-      id="editPaymentModal"
-      tabindex="-1"
-      aria-labelledby="editPaymentLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="editPaymentLabel">
-              Befizetés szerkesztése
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form id="editPaymentForm">
-              <input type="hidden" id="editPaymentId" />
-              <div class="mb-3">
-                <label for="editName" class="form-label">Név</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editName"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="editGuests" class="form-label">Létszám</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="editGuests"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="editAmount" class="form-label">Bef. Összeg</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="editAmount"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="editTable" class="form-label">Asztal</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editTable"
-                  required
-                />
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Mégse
-            </button>
-            <button type="button" class="btn btn-primary" id="saveEditPayment">
-              Mentés
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- New Payment Modal -->
-    <div
-      class="modal fade"
-      id="newPaymentModal"
-      tabindex="-1"
-      aria-labelledby="newPaymentLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="newPaymentLabel">Új befizetés</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form id="newPaymentForm">
-              <div class="mb-3">
-                <label for="newName" class="form-label">Név</label>
-                <input type="text" class="form-control" id="newName" required />
-              </div>
-              <div class="mb-3">
-                <label for="newGuests" class="form-label">Létszám</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="newGuests"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="newAmount" class="form-label">Bef. Összeg</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="newAmount"
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="newTable" class="form-label">Asztal</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="newTable"
-                  required
-                />
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Mégse
-            </button>
-            <button type="button" class="btn btn-success" id="saveNewPayment">
-              Mentés
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <h1 class="text-center mt-4">Befizetések</h1>
-
-    <div class="row ms-4 me-4 d-flex justify-content-center">
-      <div class="col-sm-6 mb-3 mb-sm-0 me-3" style="width: 20%">
-        <div class="card text-center">
-          <div class="card-body">
-            <h3 class="card-title text-danger">Asztalok</h3>
-            <h5 class="card-text">5</h5>
-          </div>
-        </div>
-      </div>
-      <div class="col-sm-6 mb-3 mb-sm-0" style="width: 20%">
-        <div class="card text-center">
-          <div class="card-body">
-            <h3 class="card-title text-primary">Vendégek</h3>
-            <h5 class="card-text">5</h5>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="d-flex justify-content-center mt-3">
-      <button
-        type="button"
-        class="btn btn-outline-success"
-        data-bs-toggle="modal"
-        data-bs-target="#newPaymentModal"
-      >
-        ÚJ BEFIZETÉS
-      </button>
-    </div>
-
-    <hr class="my-4 border-dark mt-3 mb-5" />
-
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">Név</th>
-          <th scope="col">Létszám</th>
-          <th scope="col">Bef. Összeg</th>
-          <th scope="col">Asztal</th>
-          <th scope="col">Művelet</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th scope="row">1</th>
-          <td>Szücs Adrienn</td>
-          <td>4 <span> fő</span></td>
-          <td>8000 <span> FT</span></td>
-          <td>Balogh-Tatai Asztal</td>
-          <td>
-            <div class="btn-group" role="group">
-              <button type="button" class="btn btn-outline-secondary">
-                ...
-              </button>
-              <button type="button" class="btn btn-outline-danger">T</button>
+<body>
+    <div class="d-flex justify-content-center align-items-center vh-100" id="user-login">
+        <form class="p-4 border rounded bg-light" style="width: 400px; max-width: 90%;" id="userForm">
+            <h1 class="text-center mb-4 fw-bold text-primary font-primary">Bejelentkezés</h1>
+            <div class="mb-3">
+                <label for="user" class="form-label font-primary">Felhasználónév</label>
+                <input type="text" class="form-control font-primary" id="user" placeholder="pelda.bela">
             </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+
+            <div class="mb-3">
+                <label for="pass" class="form-label font-primary">Password</label>
+                <input type="password" class="form-control font-primary" id="pass" placeholder="jelszavam1234">
+            </div>
+
+            <button type="submit" class="btn btn-outline-primary w-100 font-primary">BEJELENTKEZÉS</button>
+
+            <hr class="my-4">
+
+            <button type="button" id="adminBtn" class="btn btn-outline-secondary w-100 font-primary">
+                Bejelentkezés Adminisztrátor Kóddal
+            </button>
+        </form>
+
+        <form class="p-4 border rounded bg-light d-none" style="width: 400px; max-width: 90%;" id="adminForm">
+            <h1 class="text-center mb-4 fw-bold text-primary font-primary">Bejelentkezés</h1>
+            <div class="mb-3">
+                <label for="adminCode" class="form-label font-primary">Kód</label>
+                <input type="password" class="form-control font-primary" id="adminCode" placeholder="Írd be az admin kódot">
+            </div>
+
+            <button type="submit" class="btn btn-outline-primary w-100 font-primary">BEJELENTKEZÉS</button>
+
+            <hr class="my-4">
+
+            <button type="button" id="backToUser" class="btn btn-outline-secondary w-100 font-primary">
+                Bejelentkezés Felhasználóval
+            </button>
+        </form>
+    </div>
 
     <script>
-      const apiUrl = "http://localhost:3000/api/payments";
+        const adminBtn = document.getElementById('adminBtn');
+        const userForm = document.getElementById('userForm');
+        const adminForm = document.getElementById('adminForm');
+        const backToUser = document.getElementById('backToUser');
 
-      // Fetch and render table
-      async function loadPayments() {
-        const res = await fetch(apiUrl);
-        const payments = await res.json();
-        let num = 0;
-
-        // Tábla frissítése
-        const tbody = document.querySelector("table tbody");
-        tbody.innerHTML = "";
-        payments.forEach((p) => {
-            num += 1;
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <th scope="row">${num}</th>
-            <td>${p.name}</td>
-            <td>${p.guests} fő</td>
-            <td>${p.amount} FT</td>
-            <td>${p.table}</td>
-            <td>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-secondary edit-btn" data-id="${p._id}" data-bs-toggle="modal" data-bs-target="#editPaymentModal">...</button>
-                    <button type="button" class="btn btn-outline-danger delete-btn" data-id="${p._id}">T</button>
-                </div>
-            </td>
-        `;
-          tbody.appendChild(tr);
-        });
-        attachButtons();
-
-        // Vendégek számítása
-        const totalGuests = payments.reduce((sum, p) => sum + p.guests, 0);
-        document.querySelector(
-          ".card-title.text-primary"
-        ).nextElementSibling.textContent = totalGuests;
-
-        // Asztalok számítása (egyedi nevek)
-        const uniqueTables = new Set(payments.map((p) => p.table));
-        document.querySelector(
-          ".card-title.text-danger"
-        ).nextElementSibling.textContent = uniqueTables.size;
-      }
-
-      // Attach edit/delete events
-      function attachButtons() {
-  // Edit buttons
-  document.querySelectorAll(".edit-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const id = btn.dataset.id;
-      const res = await fetch(`${apiUrl}/${id}`);
-      if (!res.ok) {
-        alert("Hiba az adatok lekérésekor");
-        return;
-      }
-      const data = await res.json();
-      document.getElementById("editPaymentId").value = data._id;
-      document.getElementById("editName").value = data.name;
-      document.getElementById("editGuests").value = data.guests;
-      document.getElementById("editAmount").value = data.amount;
-      document.getElementById("editTable").value = data.table;
-    });
-  });
-
-  // Delete buttons
-  document.querySelectorAll(".delete-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      if (!confirm("Biztosan törlöd ezt a befizetést?")) return;
-      const id = btn.dataset.id;
-      const res = await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        alert("Hiba a törlés során");
-        return;
-      }
-      loadPayments(); // újratöltjük a táblázatot és frissítjük a számokat
-    });
-  });
-}
-
-
-      // Save edited payment
-      document
-        .getElementById("saveEditPayment")
-        .addEventListener("click", async () => {
-          const id = document.getElementById("editPaymentId").value;
-          const updatedPayment = {
-            name: document.getElementById("editName").value,
-            guests: document.getElementById("editGuests").value,
-            amount: document.getElementById("editAmount").value,
-            table: document.getElementById("editTable").value,
-          };
-          await fetch(`${apiUrl}/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedPayment),
-          });
-          loadPayments();
-          const modal = bootstrap.Modal.getInstance(
-            document.getElementById("editPaymentModal")
-          );
-          modal.hide();
+        adminBtn.addEventListener('click', () => {
+            userForm.classList.add('d-none');
+            adminForm.classList.remove('d-none');
         });
 
-      // Initial load
-      loadPayments();
-
-      document
-        .getElementById("saveNewPayment")
-        .addEventListener("click", async () => {
-          const newPayment = {
-            name: document.getElementById("newName").value,
-            guests: document.getElementById("newGuests").value,
-            amount: document.getElementById("newAmount").value,
-            table: document.getElementById("newTable").value,
-          };
-          await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newPayment),
-          });
-          loadPayments();
-          // Clear form
-          document.getElementById("newPaymentForm").reset();
-          // Close modal
-          const modal = bootstrap.Modal.getInstance(
-            document.getElementById("newPaymentModal")
-          );
-          modal.hide();
+        backToUser.addEventListener('click', (e) => {
+            e.preventDefault();
+            adminForm.classList.add('d-none');
+            userForm.classList.remove('d-none');
         });
+
+        adminBtn.addEventListener('click', () => {
+                userForm.classList.add('d-none');
+                adminForm.classList.remove('d-none');
+            });
+
+            backToUser.addEventListener('click', (e) => {
+                e.preventDefault();
+                adminForm.classList.add('d-none');
+                userForm.classList.remove('d-none');
+            });
+
+            const sessionId = localStorage.getItem('sessionId');
+
+            if (sessionId) {
+                // Opcionálisan: ellenőrizhetjük a szerveren is a /api/me végponttal
+                fetch('/api/me', {
+                    headers: { 'Authorization': sessionId }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        // Még mindig érvényes session → redirect
+                        window.location.href = '/dashboard';
+                    } else {
+                        // Érvénytelen session → töröljük
+                        localStorage.removeItem('sessionId');
+                    }
+                })
+                .catch(() => localStorage.removeItem('sessionId'));
+            }
+
+
+            // -----------------------
+            // FELHASZNÁLÓ BEJELENTKEZÉS
+            // -----------------------
+            userForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('user').value.trim();
+                const password = document.getElementById('pass').value.trim();
+
+                if (!username || !password) {
+                    alert('Kérlek, töltsd ki az összes mezőt!');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        alert(data.message || 'Hiba történt a bejelentkezés során.');
+                        return;
+                    }
+
+                    // Ha sikeres → Session ID tárolása localStorage-ben
+                    localStorage.setItem('sessionId', data.sessionId);
+
+                    // Átirányítás dashboardra
+                    window.location.href = '/dashboard';
+                } catch (err) {
+                    console.error(err);
+                    alert('Hálózati hiba történt, próbáld újra.');
+                }
+            });
+
+            adminForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const code = document.getElementById('adminCode').value.trim();
+                if (!code) {
+                    alert('Kérlek, írd be az admin kódot!');
+                    return;
+                }
+
+                try {
+                    // Példa: POST request az admin kód ellenőrzésére
+                    const response = await fetch('/api/admin-login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        alert(data.message || 'Hibás admin kód.');
+                        return;
+                    }
+
+                    // Sikeres admin login → dashboard
+                    localStorage.setItem('sessionId', data.sessionId);
+                    window.location.href = '/dashboard';
+                } catch (err) {
+                    console.error(err);
+                    alert('Hálózati hiba történt, próbáld újra.');
+                }
+            });
     </script>
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-      integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
-      integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
-      crossorigin="anonymous"
-    ></script>
-  </body>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
+        integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
+        crossorigin="anonymous"></script>
+</body>
+
 </html>

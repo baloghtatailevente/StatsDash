@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Sorverseny</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="base.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg bg-secondary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><img src="/img/logo.png" alt="Logo" width="60" height="55" class="d-inline-block align-text-top"></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link disabled text-light" aria-current="page" href="/dashboard">Kezdőlap</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-0" href="/dashboard/station?id=xyz">Állomás</a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link perm-1" href="/dashboard/players">Játékosok</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/players">Játékosok</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/admin/users">Felhasználók</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/admin/stations">Állomások</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/admin/statisztika">Statisztika</a>
+                </li>
+
+                <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle perm-99" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Napló
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/dashboard/admin/login-logs">Azonosítási Napló</a></li>
+                    
+                    <li><a class="dropdown-item" href="/dashboard/admin/logs">Renszer Napló</a></li>
+                </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/system">Rendszer</a>
+                </li>
+            </ul>
+            <button class="btn btn-light" id="logout" onclick="logout()">Kijelentkezés</button>
+            </div>
+        </div>
+        </nav>
+
+        <h1 class="mb-2 fw-bold text-primary font-primary mt-5 ms-5" id="welcome-txt">Betöltés...</h1>
+        <h3 class="fw-bold text-secondary font-primary ms-5" id="desc-text">Betöltés...</h1>
+
+        <script>
+            const logoutBtn = document.getElementById("logout")
+            const sessionId = localStorage.getItem('sessionId');
+
+            let data;
+
+            async function logout() {
+                const response = await fetch('/api/logout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Authorization': sessionId }
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        alert(data.message || 'Hiba történt a bejelentkezés során.');
+                        return;
+                    } else if (response.ok) {
+                        localStorage.removeItem("sessionId")
+                        window.location.href = "/"
+                    }
+            }
+
+            async function init() {
+    const sessionId = localStorage.getItem('sessionId');
+    if (!sessionId) return; // nincs session
+
+    try {
+        const res = await fetch('/api/me', {
+            headers: { 'Authorization': sessionId }
+        });
+
+        if (res.ok) {
+            const data = await res.json(); // <-- várjuk meg a JSON parse-t
+            console.log(data);
+            document.getElementById("welcome-txt").innerText = `Üdvözöllek, ${data.firstname}`;
+
+            console.log(data.rank)
+
+            if (data.rank == 0) {
+                document.getElementById("desc-text").innerText = `A te állomásod: ${data.assigned_station}`;
+
+                // Elrejtjük a perm-1 és perm-99 elemeket
+                document.querySelectorAll(".perm-1, .perm-99").forEach(el => {
+                    el.style.display = "none";
+                });
+
+            } else if (data.rank == 1) {
+                document.getElementById("desc-text").innerText = `Játékosregisztációs jogkör`;
+
+                // Elrejtjük a perm-0 és perm-99 elemeket
+                document.querySelectorAll(".perm-0, .perm-99").forEach(el => {
+                    el.style.display = "none";
+                });
+
+            } else if (data.rank == 99) {
+                document.getElementById("desc-text").innerText = `Adminisztrációs jogkör`;
+
+                // Elrejtjük a perm-0 és perm-1 elemeket
+                document.querySelectorAll(".perm-0, .perm-1").forEach(el => {
+                    el.style.display = "none";
+                });
+            }
+
+        } else {
+            //Érvénytelen session → töröljük és redirect
+            localStorage.removeItem('sessionId');
+            window.location.href = '/';
+        }
+    } catch (err) {
+        console.error(err);
+        localStorage.removeItem('sessionId');
+        window.location.href = '/';
+    }
+}
+
+
+                init()
+        </script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
+        integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

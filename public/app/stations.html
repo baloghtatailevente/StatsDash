@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Állomások - Sorverseny</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="base.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+
+        
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+
+</head>
+
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg bg-secondary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><img src="/img/logo.png" alt="Logo" width="60" height="55" class="d-inline-block align-text-top"></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" aria-current="page" href="/dashboard">Kezdőlap</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-0" href="/dashboard/station?id=xyz">Állomás</a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link perm-1" href="/dashboard/players">Játékosok</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/players">Játékosok</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/admin/users">Felhasználók</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link disabled text-light" href="/dashboard/admin/stations">Állomások</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/admin/statisztika">Statisztika</a>
+                </li>
+
+                <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle perm-99" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Napló
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/dashboard/admin/login-logs">Azonosítási Napló</a></li>
+                    
+                    <li><a class="dropdown-item" href="/dashboard/admin/logs">Renszer Napló</a></li>
+                </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link perm-99" href="/dashboard/system">Rendszer</a>
+                </li>
+            </ul>
+            <button class="btn btn-light" id="logout" onclick="logout()">Kijelentkezés</button>
+            </div>
+        </div>
+        </nav>
+
+            <!-- EDIT MODAL -->
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editUserLabel">Felhasználó szerkesztése</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editUserForm">
+          <input type="hidden" id="editUserId">
+          <div class="row mb-3">
+            <div class="col">
+              <label for="editFirstname" class="form-label">Keresztnév</label>
+              <input type="text" class="form-control" id="editFirstname">
+            </div>
+            <div class="col">
+              <label for="editLastname" class="form-label">Vezetéknév</label>
+              <input type="text" class="form-control" id="editLastname">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="editEmail" class="form-label">E-mail</label>
+            <input type="email" class="form-control" id="editEmail">
+          </div>
+          <div class="mb-3">
+            <label for="editPhone" class="form-label">Telefon</label>
+            <input type="text" class="form-control" id="editPhone">
+          </div>
+          <div class="mb-3">
+            <label for="editStation" class="form-label">Állomás</label>
+            <input type="text" class="form-control" id="editStation">
+          </div>
+          <div class="mb-3">
+            <label for="editRank" class="form-label">Rang</label>
+            <input type="number" class="form-control" id="editRank">
+          </div>
+          <!-- NEW FIELDS -->
+          <div class="mb-3">
+            <label for="editPassword" class="form-label">Új jelszó</label>
+            <input type="password" class="form-control" id="editPassword" placeholder="Hagyd üresen, ha nem akarod módosítani">
+          </div>
+          <div class="mb-3">
+            <label for="editCode" class="form-label">Új belépési kód</label>
+            <input type="text" class="form-control" id="editCode" placeholder="Hagyd üresen, ha nem akarod módosítani">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+        <button type="button" class="btn btn-primary" onclick="saveUser()">Mentés</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addUserLabel">Új felhasználó hozzáadása</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bezárás"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addUserForm">
+          <div class="row mb-3">
+            <div class="col">
+              <label for="addFirstname" class="form-label">Keresztnév</label>
+              <input type="text" class="form-control" id="addFirstname" required>
+            </div>
+            <div class="col">
+              <label for="addLastname" class="form-label">Vezetéknév</label>
+              <input type="text" class="form-control" id="addLastname" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="addUsername" class="form-label">Felhasználónév</label>
+            <input type="text" class="form-control" id="addUsername" required>
+          </div>
+          <div class="mb-3">
+            <label for="addPassword" class="form-label">Jelszó</label>
+            <input type="password" class="form-control" id="addPassword" required>
+          </div>
+          <div class="row mb-3">
+            <div class="col">
+              <label for="addEmail" class="form-label">E-mail</label>
+              <input type="text" class="form-control" id="addEmail" required>
+            </div>
+            <div class="col">
+              <label for="addPhone" class="form-label">Telefon</label>
+              <input type="text" class="form-control" id="addPhone" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="addStation" class="form-label">Állomás</label>
+            <input type="text" class="form-control" id="addStation">
+          </div>
+
+          <div class="mb-3">
+            <label for="addCode" class="form-label">Belépési Kód</label>
+            <input type="text" class="form-control" id="addCode">
+          </div>
+
+          <div class="mb-3">
+            <label for="addRank" class="form-label">Rang</label>
+            <select class="form-select" id="addRank" required>
+              <option value="0">Állomásvezető</option>
+              <option value="1">Játékosregisztráció</option>
+              <option value="99">Adminisztrátor</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+        <button type="button" class="btn btn-success" onclick="addUser()">Hozzáadás</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="container my-4">
+  <div class="row align-items-center">
+    <!-- Statisztikák -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body"> 
+          <h6 class="card-title text-success fw-bold">Nyitva</h6>
+          <p class="card-text fs-4" id="stat-open">0</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <h6 class="card-title text-danger fw-bold">Zárva</h6>
+          <p class="card-text fs-4" id="stat-closed">0</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <h6 class="card-title text-warning fw-bold s">Átlag Vár. Idő</h6>
+          <p class="card-text fs-4" id="stat-wait-time">3,5<span> perc</span></p>
+        </div>
+      </div>
+    </div>
+    <!-- Gomb -->
+    <div class="col-md-3 text-center">
+      <button class="btn btn-success w-100" id="addUserBtn">
+        + Felhasználó hozzáadása
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+    <table class="table">
+        <thead>
+            <tr>
+            <th scope="col">#</th>
+            <th scope="col">Vezetéknév</th>
+            <th scope="col">Keresztnév</th>
+            <th scope="col">Felhasználónév</th>
+            <th scope="col">E-Mail</th>
+            <th scope="col">Telefon</th>
+            <th scope="col">Állomás</th>
+            <th scope="col">Utolsó Bej.</th>
+            <th scope=""></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+            <th scope="row">1</th>
+            <td>Betöltés...</td>
+            <td>Betöltés...</td>
+            <td>Betöltés...</td>
+            <td>Betöltés...</td>
+            <td>Betöltés...</td>
+            <td>Betöltés...</td>
+            <td>Betöltés...</td>
+            <td>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-success"><span class="material-symbols-outlined">
+more_horiz
+</span></button>
+                    <button type="button" class="btn btn-outline-danger">DELETE</button>
+                </div>
+            </td>
+            </tr>
+            
+        </tbody>
+    </table>
+
+
+    <!-- SCRIPT -->
+<script>
+const logoutBtn = document.getElementById("logout");
+
+async function logout() {
+    const sessionId = localStorage.getItem('sessionId');
+    try {
+        const response = await fetch('/api/logout', {
+            method: 'POST',
+            headers: { 'Authorization': sessionId }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            alert(data.message || 'Hiba történt a kijelentkezés során.');
+            return;
+        }
+        localStorage.removeItem("sessionId");
+        window.location.href = "/";
+    } catch (err) {
+        console.error(err);
+        alert('Hálózati hiba.');
+    }
+}
+
+// --- INIT & PERMISSIONS ---
+async function init() {
+    const sessionId = localStorage.getItem('sessionId');
+    if (!sessionId) {
+        localStorage.removeItem("sessionId");
+        window.location.href = "/";
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/me', {
+            headers: { 'Authorization': sessionId }
+        });
+        if (!res.ok) throw new Error("Nem vagy bejelentkezve");
+
+        const data = await res.json();
+
+        // Non-admin redirect
+        if (data.rank !== 99) {
+            window.location.href = "/dashboard";
+            return;
+        }
+
+        // Permissions hide/show
+        if (data.rank == 0) document.querySelectorAll(".perm-1, .perm-99").forEach(el => el.style.display = "none");
+        else if (data.rank == 1) document.querySelectorAll(".perm-0, .perm-99").forEach(el => el.style.display = "none");
+        else if (data.rank == 99) document.querySelectorAll(".perm-0, .perm-1").forEach(el => el.style.display = "none");
+
+        if (data.assigned_station) {
+            const stationLink = document.getElementById("station-link");
+            if (stationLink) stationLink.href = `/dashboard/station?id=${data.assigned_station}`;
+        }
+    } catch (err) {
+        console.error(err);
+        localStorage.removeItem("sessionId");
+        window.location.href = "/";
+    }
+}
+
+init();
+
+// --- UTILITY: BUILD PAYLOAD ---
+function getUserPayload(formPrefix) {
+    const payload = {
+        firstname: document.getElementById(`${formPrefix}Firstname`).value,
+        lastname: document.getElementById(`${formPrefix}Lastname`).value,
+        email: document.getElementById(`${formPrefix}Email`).value,
+        phone: document.getElementById(`${formPrefix}Phone`).value,
+        assigned_station: document.getElementById(`${formPrefix}Station`).value,
+        rank: parseInt(document.getElementById(`${formPrefix}Rank`).value)
+    };
+
+    if (formPrefix === "add") {
+        payload.username = document.getElementById("addUsername").value;
+    }
+
+    const password = document.getElementById(`${formPrefix}Password`)?.value;
+    if (password && password.trim() !== "") payload.password = password;
+
+    const code = document.getElementById(`${formPrefix}Code`)?.value;
+    if (code && code.trim() !== "") payload.code = code;
+
+    if (formPrefix === "edit") delete payload.username;
+
+    return payload;
+}
+
+// --- FETCH USERS ---
+async function fetchUsers() {
+    try {
+        const res = await fetch('/api/users');
+        const users = await res.json();
+        const tbody = document.querySelector("table tbody");
+        tbody.innerHTML = "";
+
+        updateStats(users);
+
+        users.forEach((user, i) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <th scope="row">${i+1}</th>
+                <td>${user.lastname}</td>
+                <td>${user.firstname}</td>
+                <td>@${user.username}</td>
+                <td>${user.email}</td>
+                <td>${user.phone || '-'}</td>
+                <td>${user.assigned_station || '-'}</td>
+                <td>${user.last_login ? new Date(user.last_login).toLocaleString() : '-'}</td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-success" onclick="openEditModal('${user._id}')">
+                            <span class="material-symbols-outlined">more_horiz</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="deleteUser('${user._id}')">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Hiba a felhasználók lekérésekor:", err);
+    }
+}
+
+// --- UPDATE STATS ---
+function updateStats(users) {
+    const counts = { 0: 0, 1: 0, 99: 0 };
+    users.forEach(u => { if (counts[u.rank] !== undefined) counts[u.rank]++; });
+    document.getElementById("stat-rank-0").innerText = counts[0];
+    document.getElementById("stat-rank-1").innerText = counts[1];
+    document.getElementById("stat-rank-99").innerText = counts[99];
+}
+
+// --- DELETE USER ---
+async function deleteUser(id) {
+    if (!confirm("Biztosan törölni szeretnéd?")) return;
+    try {
+        const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        alert(data.message);
+        fetchUsers();
+    } catch (err) {
+        console.error("Hiba törlésnél:", err);
+    }
+}
+
+// --- ADD USER ---
+document.getElementById("addUserBtn").addEventListener("click", () => {
+    new bootstrap.Modal(document.getElementById("addUserModal")).show();
+});
+
+async function addUser() {
+    const payload = getUserPayload("add");
+
+    try {
+        const res = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data.message || "Hiba történt a hozzáadásnál.");
+
+        fetchUsers();
+        bootstrap.Modal.getInstance(document.getElementById("addUserModal")).hide();
+        document.getElementById("addUserForm").reset();
+    } catch (err) {
+        console.error(err);
+        alert("Hálózati hiba.");
+    }
+}
+
+// --- EDIT USER ---
+let currentUserId = null;
+
+function openEditModal(id) {
+    fetch(`/api/users`)
+        .then(res => res.json())
+        .then(users => {
+            const user = users.find(u => u._id === id);
+            if (!user) return;
+
+            currentUserId = id;
+            document.getElementById("editUserId").value = id;
+            document.getElementById("editFirstname").value = user.firstname || "";
+            document.getElementById("editLastname").value = user.lastname || "";
+            document.getElementById("editEmail").value = user.email || "";
+            document.getElementById("editPhone").value = user.phone || "";
+            document.getElementById("editStation").value = user.assigned_station || "";
+            document.getElementById("editRank").value = user.rank || 0;
+
+            new bootstrap.Modal(document.getElementById("editUserModal")).show();
+        });
+}
+
+async function saveUser() {
+    const id = document.getElementById("editUserId").value;
+    const payload = getUserPayload("edit");
+
+    try {
+        const res = await fetch(`/api/users/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data.message || "Hiba történt a mentésnél");
+
+        fetchUsers();
+        bootstrap.Modal.getInstance(document.getElementById("editUserModal")).hide();
+        document.getElementById("editPassword").value = "";
+        document.getElementById("editCode").value = "";
+    } catch (err) {
+        console.error(err);
+        alert("Hálózati hiba");
+    }
+}
+
+// --- INITIAL USERS ---
+fetchUsers();
+</script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
+        integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

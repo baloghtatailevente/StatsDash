@@ -1,0 +1,28 @@
+.font-primary {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8f9fa;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Background logo */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 80%;
+      height: 80%;
+      background: url("img/logo.png") no-repeat center/contain;
+      transform: translate(-50%, -50%);
+      opacity: 0.05;      /* faint transparency */
+      z-index: 0;
+      pointer-events: none;
+    }
