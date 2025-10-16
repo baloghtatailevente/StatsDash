@@ -15,65 +15,83 @@
         rel="stylesheet">
 </head>
 
-<body>
+<body class="vh-100">
     <nav class="navbar navbar-expand-lg bg-secondary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#"><img src="/img/logo.png" alt="Logo" width="60" height="55" class="d-inline-block align-text-top"></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+            <a class="navbar-brand" href="#"><img src="/img/logo.png" alt="Logo" width="60" height="55"
+                    class="d-inline-block align-text-top"></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link disabled text-light" aria-current="page" href="/dashboard">Kezdőlap</a>
-                </li>
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link disabled text-light" aria-current="page" href="/dashboard">Kezdőlap</a>
+                    </li>
 
-                <li class="nav-item">
-                    <a class="nav-link perm-0" href="/dashboard/station?id=xyz">Állomás</a>
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link perm-1" href="/dashboard/players">Játékosok</a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link perm-0" id="station_href" href="/dashboard/station?id=xyz">Állomás</a>
+                    </li>
 
-                <li class="nav-item">
-                    <a class="nav-link perm-99" href="/dashboard/players">Játékosok</a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link perm-1" href="/dashboard/players">Játékosok</a>
+                    </li>
 
-                <li class="nav-item">
-                    <a class="nav-link perm-99" href="/dashboard/admin/users">Felhasználók</a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/players">Játékosok</a>
+                    </li>
 
-                <li class="nav-item">
-                    <a class="nav-link perm-99" href="/dashboard/admin/stations">Állomások</a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/admin/users">Felhasználók</a>
+                    </li>
 
-                <li class="nav-item">
-                    <a class="nav-link perm-99" href="/dashboard/admin/statisztika">Statisztika</a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/admin/stations">Állomások</a>
+                    </li>
 
-                <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle perm-99" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Napló
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/dashboard/admin/login-logs">Azonosítási Napló</a></li>
-                    
-                    <li><a class="dropdown-item" href="/dashboard/admin/logs">Renszer Napló</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/admin/statisztika">Statisztika</a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle perm-99" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            Napló
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/dashboard/admin/login-logs">Azonosítási Napló</a></li>
+
+                            <li><a class="dropdown-item" href="/dashboard/admin/logs">Renszer Napló</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/system">Rendszer</a>
+                    </li>
                 </ul>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link perm-99" href="/dashboard/system">Rendszer</a>
-                </li>
-            </ul>
-            <button class="btn btn-light" id="logout" onclick="logout()">Kijelentkezés</button>
+                <button class="btn btn-light" id="logout" onclick="logout()">Kijelentkezés</button>
             </div>
         </div>
-        </nav>
+    </nav>
 
-        <h1 class="mb-2 fw-bold text-primary font-primary mt-5 ms-5" id="welcome-txt">Betöltés...</h1>
-        <h3 class="fw-bold text-secondary font-primary ms-5" id="desc-text">Betöltés...</h1>
+    <h1 class="mb-2 fw-bold text-primary font-primary mt-5 ms-5" id="welcome-txt">Betöltés...</h1>
+    <h3 class="fw-bold text-secondary font-primary ms-5" id="desc-text">Betöltés...</h1>
+        <hr class="my-4 border-dark mx-auto w-75 border-2">
+        <div style="width: 95%;" class="perm-0" id="stationContainer">
+            <div class="card ms-5 mt-3">
+                <h5 class="card-header"><b>Állomásod</h5>
+                <div class="card-body">
+                    <h5 class="card-title" id="stationName">Betöltés...</h5>
+                    <p class="card-text"><span class="text-danger" id="stationStatus"><b>●</b></span> <span
+                            id="stationStatusText">Zárva</span> - <span class="text-warning">Várakozási idő:</span>
+                        <span id="stationWaitTime">0</span>p
+                    </p>
+                    <a href="/dashboard/station?id=xyz" class="btn btn-outline-primary" id="stationOpen">Megnyitás</a>
+                </div>
+            </div>
+        </div>
 
         <script>
             const logoutBtn = document.getElementById("logout")
@@ -83,86 +101,151 @@
 
             async function logout() {
                 const response = await fetch('/api/logout', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        headers: { 'Authorization': sessionId }
-                    });
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Authorization': sessionId }
+                });
 
-                    const data = await response.json();
+                const data = await response.json();
 
-                    if (!response.ok) {
-                        alert(data.message || 'Hiba történt a bejelentkezés során.');
-                        return;
-                    } else if (response.ok) {
-                        localStorage.removeItem("sessionId")
-                        window.location.href = "/"
-                    }
+                if (!response.ok) {
+                    alert(data.message || 'Hiba történt a bejelentkezés során.');
+                    return;
+                } else if (response.ok) {
+                    localStorage.removeItem("sessionId")
+                    window.location.href = "/"
+                }
             }
 
             async function init() {
-    const sessionId = localStorage.getItem('sessionId');
-    if (!sessionId) return; // nincs session
+                const sessionId = localStorage.getItem("sessionId");
+                if (!sessionId) return; // nincs session
 
-    try {
-        const res = await fetch('/api/me', {
-            headers: { 'Authorization': sessionId }
-        });
+                try {
+                    const res = await fetch("/api/me", {
+                        headers: { Authorization: sessionId },
+                    });
 
-        if (res.ok) {
-            const data = await res.json(); // <-- várjuk meg a JSON parse-t
-            console.log(data);
-            document.getElementById("welcome-txt").innerText = `Üdvözöllek, ${data.firstname}`;
+                    if (!res.ok) {
+                        localStorage.removeItem("sessionId");
+                        return (window.location.href = "/");
+                    }
 
-            console.log(data.rank)
+                    const data = await res.json();
+                    console.log("Felhasználói adatok:", data);
 
-            if (data.rank == 0) {
-                document.getElementById("desc-text").innerText = `A te állomásod: ${data.assigned_station}`;
+                    document.getElementById("welcome-txt").innerText = `Üdvözöllek, ${data.firstname}`;
+                    const rank = Number(data.rank);
+                    const assignedStation = data.assigned_station;
 
-                // Elrejtjük a perm-1 és perm-99 elemeket
-                document.querySelectorAll(".perm-1, .perm-99").forEach(el => {
-                    el.style.display = "none";
-                });
+                    // ----- RANG ALAPÚ MEGJELENÍTÉS -----
+                    switch (rank) {
+                        case 0: // Állomásvezető
+                            await handleStationUser(data, sessionId, assignedStation);
+                            hidePermissionGroups([".perm-1", ".perm-99"]);
+                            break;
 
-            } else if (data.rank == 1) {
-                document.getElementById("desc-text").innerText = `Játékosregisztációs jogkör`;
+                        case 1: // Regisztrációs jogkör
+                            document.getElementById("desc-text").innerText = `Játékosregisztációs jogkör`;
+                            hidePermissionGroups([".perm-0", ".perm-99"]);
+                            break;
 
-                // Elrejtjük a perm-0 és perm-99 elemeket
-                document.querySelectorAll(".perm-0, .perm-99").forEach(el => {
-                    el.style.display = "none";
-                });
+                        case 99: // Admin
+                            document.getElementById("desc-text").innerText = `Adminisztrációs jogkör`;
+                            hidePermissionGroups([".perm-0", ".perm-1"]);
+                            break;
 
-            } else if (data.rank == 99) {
-                document.getElementById("desc-text").innerText = `Adminisztrációs jogkör`;
+                        default:
+                            console.warn("Ismeretlen rank:", rank);
+                            break;
+                    }
+                } catch (err) {
+                    console.error("Hiba az init során:", err);
+                    localStorage.removeItem("sessionId");
+                    window.location.href = "/";
+                }
+            }
 
-                // Elrejtjük a perm-0 és perm-1 elemeket
-                document.querySelectorAll(".perm-0, .perm-1").forEach(el => {
+            // ----- SEGÉDFÜGGVÉNYEK -----
+
+            async function handleStationUser(data, sessionId, assignedStation) {
+                const desc = document.getElementById("desc-text");
+                const stationContainer = document.getElementById("stationContainer");
+
+                if (!assignedStation || assignedStation === "-") {
+                    desc.innerText = "Nem vagy egy állomáshoz sem beállítva!";
+                    if (stationContainer) stationContainer.style.display = "none";
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/stations/${assignedStation}`, {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: sessionId,
+                        },
+                    });
+
+                    const stationData = await response.json();
+                    if (!response.ok) {
+                        console.error("Hiba az állomás lekérésénél:", stationData.message);
+                        alert(stationData.message || "Hiba az inicializálás során");
+                        return;
+                    }
+
+                    // UI frissítés
+                    desc.innerText = `A te állomásod: ${stationData.name} (#${stationData.number})`;
+                    setStationInfo(stationData, assignedStation);
+
+                } catch (err) {
+                    console.error("Állomás lekérési hiba:", err);
+                }
+            }
+
+            function setStationInfo(stationData, assignedStation) {
+                const { name, number, status, delay } = stationData;
+
+                document.getElementById("station_href").href = `/dashboard/station?id=${assignedStation}`;
+                document.getElementById("stationOpen").href = `/dashboard/station?id=${assignedStation}`;
+                document.getElementById("stationName").innerText = `${name} (#${number})`;
+
+                const statusEl = document.getElementById("stationStatus");
+                const statusTextEl = document.getElementById("stationStatusText");
+
+                if (status === false) {
+                    statusEl.classList.remove("text-success");
+                    statusEl.classList.add("text-danger");
+                    statusTextEl.innerText = "Zárva";
+                } else {
+                    statusEl.classList.remove("text-danger");
+                    statusEl.classList.add("text-success");
+                    statusTextEl.innerText = "Nyitva";
+                }
+
+                document.getElementById("stationWaitTime").innerText = delay;
+            }
+
+            function hidePermissionGroups(selectors) {
+                document.querySelectorAll(selectors.join(",")).forEach((el) => {
                     el.style.display = "none";
                 });
             }
 
-        } else {
-            //Érvénytelen session → töröljük és redirect
-            localStorage.removeItem('sessionId');
-            window.location.href = '/';
-        }
-    } catch (err) {
-        console.error(err);
-        localStorage.removeItem('sessionId');
-        window.location.href = '/';
-    }
-}
+
+            init()
 
 
-                init()
+
+
         </script>
 
 
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
-        integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
-        crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+            integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+            crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
+            integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
+            crossorigin="anonymous"></script>
 </body>
 
 </html>

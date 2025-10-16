@@ -19,14 +19,14 @@
     <div class="d-flex justify-content-center align-items-center vh-100" id="user-login">
         <form class="p-4 border rounded bg-light" style="width: 400px; max-width: 90%;" id="userForm">
             <h1 class="text-center mb-4 fw-bold text-primary font-primary">Bejelentkezés</h1>
-            <div class="mb-3">
-                <label for="user" class="form-label font-primary">Felhasználónév</label>
-                <input type="text" class="form-control font-primary" id="user" placeholder="pelda.bela">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control font-primary border-dark-subtle" id="user" placeholder="pelda.bela">
+                <label for="user">Felhasználónév</label>
             </div>
 
-            <div class="mb-3">
-                <label for="pass" class="form-label font-primary">Password</label>
-                <input type="password" class="form-control font-primary" id="pass" placeholder="jelszavam1234">
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control font-primary border-dark-subtle" id="pass" placeholder="azenjelszavam1234">
+                <label for="pass">Jelszó</label>
             </div>
 
             <button type="submit" class="btn btn-outline-primary w-100 font-primary">BEJELENTKEZÉS</button>

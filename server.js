@@ -6,14 +6,35 @@ const bcrypt = require('bcrypt');
 
 const User = require('./models/User');
 const LoginLog = require('./models/LoginLog');
+const Station = require('./models/Station');
+
+const { sendMail } = require("./utils/mailer")
 
 const { v4: uuidv4 } = require('uuid');
 
 const sessions = new Map(); // SessionID → UserID
 
+
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// --- Socket.io Setup ---
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server, {
+  cors: { origin: "*" }
+});
+
+function broadcastUpdate() {
+  io.emit('update', { entity: 'station' });
+}
+
+io.on('connection', (socket) => {
+  console.log('🔌 Client connected:', socket.id);
+  socket.on('disconnect', () => console.log('❌ Client disconnected:', socket.id));
+});
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB kapcsolódva'))
@@ -26,6 +47,8 @@ app.get('/api', (req, res) => {
 app.post('/api/users', async (req, res) => {
     try {
         const { firstname, lastname, username, password, email, phone, station_assigned, rank, code } = req.body;
+
+        const ip = req.ip;
 
         // Jelszó bcrypted
         const saltRounds = 10;
@@ -47,6 +70,69 @@ app.post('/api/users', async (req, res) => {
         });
 
         await user.save();
+
+        const result = await sendMail({
+            to: user.email,
+            subject: "Üdvözlünk rendszerünkben!",
+            text: `Sikeres regisztráció történt a rendszerünkben.
+
+Felhasználói adataid:
+---------------------
+Felhasználónév: ${user.username}
+E-mail cím: ${user.email}
+Regisztráció IP címe: ${ip}
+Időpont: ${new Date().toLocaleString("hu-HU")}
+
+Ha nem te hoztad létre ezt a fiókot, kérjük, azonnal lépj kapcsolatba az adminisztrátorral.`,
+
+            html: `
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 500px; margin: auto; border: 1px solid #ddd; border-radius: 10px; padding: 20px;">
+      <h2 style="color: #007bff;">Üdvözlünk a rendszerünkben, ${user.firstname}!</h2>
+      <p>Az alábbi adatokkal lettél feljegyezve az adatbázisunkba:</p>
+
+      <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <tr>
+          <td style="padding: 8px; font-weight: bold;">Felhasználónév:</td>
+          <td style="padding: 8px;">${user.username}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold;">E-mail cím:</td>
+          <td style="padding: 8px;">${user.email}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold;">Telefonszám:</td>
+          <td style="padding: 8px;">${user.phone}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold;">Jelszó:</td>
+          <td style="padding: 8px;">${password}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold;">Bej. Kód:</td>
+          <td style="padding: 8px;">${user.code}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold;">Regisztráció ideje:</td>
+          <td style="padding: 8px;">${new Date().toLocaleString("hu-HU")}</td>
+        </tr>
+      </table>
+
+      <p style="margin-top: 20px;">
+        Ha már van egy aktív fiókod, de nem te hoztad létre ezt a fiókot, kérjük jelezd az adminisztrátor felé.
+      </p>
+
+      <hr style="margin-top: 30px;">
+      <p style="font-size: 12px; color: #777;">Ez egy automatikus üzenet, kérjük, ne válaszolj rá.</p>
+    </div>
+  `,
+        });
+
+        if (!result.success) {
+            console.error("❌ Email küldési hiba:", result.error);
+        } else {
+            console.log("📩 Regisztrációs e-mail elküldve:", user.email);
+        }
+
         res.status(201).json({ message: 'Felhasználó létrehozva', userId: user._id });
     } catch (err) {
         console.error(err);
@@ -86,6 +172,9 @@ app.post('/api/login', async (req, res) => {
     try {
         const user = await User.findOne({ username });
 
+        console.log(user)
+        console.log(user.email)
+
         if (!user) {
             // Sikertelen login log
             await LoginLog.create({ user: null, success: false, ip });
@@ -109,6 +198,21 @@ app.post('/api/login', async (req, res) => {
 
         // Login log létrehozása
         await LoginLog.create({ user: user._id, success: true, ip });
+
+        const result = await sendMail({
+            to: user.email,
+            subject: "Új bejelentkezés",
+            text: `Új bejelentkezést észleltünk a fiókodba.\n\nFelhasználó: ${user.username}\nIP: ${ip}\nIdőpont: ${new Date().toLocaleString("hu-HU")}`,
+            html: `
+        <h3>Új bejelentkezést észleltünk</h3>
+        <p><b>Felhasználó:</b> ${user.username}</p>
+        <p><b>IP cím:</b> ${ip}</p>
+        <p><b>Időpont:</b> ${new Date().toLocaleString("hu-HU")}</p>
+        <p>Ha ez nem te voltál, <a href="#">változtasd meg a jelszavadat!</a></p>
+      `,
+        });
+
+        if (!result.success) console.error("Email küldési hiba:", result.error);
 
         res.json({ message: 'Sikeres bejelentkezés', sessionId });
     } catch (err) {
@@ -186,13 +290,14 @@ app.delete('/api/users/:id', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { firstname, lastname, email, phone, assigned_station, rank, password, code } = req.body;
+        const { firstname, lastname, email, phone, assigned_station, rank, password, code, username } = req.body;
 
         // Build update object only with provided fields
         const updateData = {};
         if (firstname !== undefined) updateData.firstname = firstname;
         if (lastname !== undefined) updateData.lastname = lastname;
         if (email !== undefined) updateData.email = email;
+        if (username !== undefined) updateData.username = username;
         if (phone !== undefined) updateData.phone = phone;
         if (assigned_station !== undefined) updateData.assigned_station = assigned_station;
         if (rank !== undefined) updateData.rank = parseInt(rank); // ensure number
@@ -300,6 +405,107 @@ app.patch('/api/players/:id/points', async (req, res) => {
     }
 });
 
+// Get all stations
+app.get('/api/stations', async (req, res) => {
+    try {
+        const stations = await Station.find();
+        res.json(stations);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Get one station
+app.get('/api/stations/:id', async (req, res) => {
+    try {
+        const station = await Station.findById(req.params.id);
+        if (!station) return res.status(404).json({ message: 'Station not found' });
+        res.json(station);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Create new station
+app.post('/api/stations', async (req, res) => {
+    try {
+        const station = new Station(req.body);
+        const newStation = await station.save();
+        res.status(201).json(newStation);
+        broadcastUpdate();
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// Update station
+app.put('/api/stations/:id', async (req, res) => {
+    try {
+        const updated = await Station.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updated) return res.status(404).json({ message: 'Station not found' });
+        res.json(updated);
+        broadcastUpdate();
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// Delete station
+app.delete('/api/stations/:id', async (req, res) => {
+    try {
+        const deleted = await Station.findByIdAndDelete(req.params.id);
+        if (!deleted) return res.status(404).json({ message: 'Station not found' });
+        res.json({ message: 'Station deleted' });
+        broadcastUpdate();
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Toggle station status
+app.patch('/api/stations/:id/status/:status', async (req, res) => {
+  try {
+    const { id, status } = req.params;
+    const station = await Station.findById(id);
+
+    if (!station) {
+      return res.status(404).json({ message: 'Station not found' });
+    }
+
+    // Convert status param to a boolean safely
+    const normalizedStatus =
+      status === 'true' || status === '1' || status === 'on';
+
+    station.status = normalizedStatus;
+
+    await station.save();
+
+    res.status(200).json(station);
+    broadcastUpdate();
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// Set delay
+app.patch('/api/stations/:id/delay', async (req, res) => {
+    try {
+        const { delay } = req.body;
+        const station = await Station.findByIdAndUpdate(
+            req.params.id,
+            { delay },
+            { new: true }
+        );
+        if (!station) return res.status(404).json({ message: 'Station not found' });
+
+        res.json(station);
+        broadcastUpdate();
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
 app.get('/api/players', async (req, res) => {
     try {
         const players = await require('./models/Player').find().sort({ createdAt: -1 });
@@ -327,6 +533,16 @@ app.get('/dashboard/admin/stations', (req, res) => {
     res.sendFile(__dirname + "/public/app/stations.html")
 })
 
+app.get('/dashboard/station', (req, res) => {
+    res.sendFile(__dirname + "/public/app/station.html")
+})
+
+app.get("/display/monitor", (req, res) => {
+    res.sendFile(__dirname + "/public/app/monitor.html")
+})
+
+// TEMORARLY
+
 // Server indítás
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server fut a ${PORT} porton`));
+server.listen(PORT, "192.168.1.24", () => console.log(`Server fut a ${PORT} porton`));
