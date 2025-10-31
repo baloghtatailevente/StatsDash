@@ -14,6 +14,8 @@ const { v4: uuidv4 } = require('uuid');
 
 const sessions = new Map(); // SessionID → UserID
 
+const accessCode = "123456"
+
 
 const app = express();
 app.use(express.json());
@@ -24,17 +26,13 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server, {
-  cors: { origin: "*" }
+    cors: { origin: "*" }
 });
 
 function broadcastUpdate() {
-  io.emit('update', { entity: 'station' });
+    io.emit('stationsUpdated');
 }
 
-io.on('connection', (socket) => {
-  console.log('🔌 Client connected:', socket.id);
-  socket.on('disconnect', () => console.log('❌ Client disconnected:', socket.id));
-});
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB kapcsolódva'))
@@ -172,8 +170,8 @@ app.post('/api/login', async (req, res) => {
     try {
         const user = await User.findOne({ username });
 
-        console.log(user)
-        console.log(user.email)
+        // console.log(user)
+        // console.log(user.email)
 
         if (!user) {
             // Sikertelen login log
@@ -217,7 +215,7 @@ app.post('/api/login', async (req, res) => {
         res.json({ message: 'Sikeres bejelentkezés', sessionId });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Hiba történt a bejelentkezés során' });
+        res.status(500).json({ message: 'Hiba történt a bejelentkezés során.' });
     }
 });
 
@@ -464,27 +462,27 @@ app.delete('/api/stations/:id', async (req, res) => {
 
 // Toggle station status
 app.patch('/api/stations/:id/status/:status', async (req, res) => {
-  try {
-    const { id, status } = req.params;
-    const station = await Station.findById(id);
+    try {
+        const { id, status } = req.params;
+        const station = await Station.findById(id);
 
-    if (!station) {
-      return res.status(404).json({ message: 'Station not found' });
+        if (!station) {
+            return res.status(404).json({ message: 'Station not found' });
+        }
+
+        // Convert status param to a boolean safely
+        const normalizedStatus =
+            status === 'true' || status === '1' || status === 'on';
+
+        station.status = normalizedStatus;
+
+        await station.save();
+
+        res.status(200).json(station);
+        broadcastUpdate();
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
-
-    // Convert status param to a boolean safely
-    const normalizedStatus =
-      status === 'true' || status === '1' || status === 'on';
-
-    station.status = normalizedStatus;
-
-    await station.save();
-
-    res.status(200).json(station);
-    broadcastUpdate();
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
 });
 
 
@@ -516,6 +514,171 @@ app.get('/api/players', async (req, res) => {
     }
 });
 
+app.get('/api/logs/auth', async (req, res) => {
+    try {
+        const logs = await LoginLog.find()
+        res.json(logs)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Hiba az azonosítási napló lekérésekor" })
+    }
+})
+
+// Fetch player by their number
+app.get('/api/users/number/:number', async (req, res) => {
+    try {
+        const { number } = req.params;
+        const Player = require('./models/Player');
+        const player = await Player.findOne({ number });
+        if (!player) {
+            return res.status(404).json({ message: 'Player not found' });
+        }
+        res.json(player);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error fetching user', error: err.message });
+    }
+});
+
+app.post('/api/points/register', async (req, res) => {
+    try {
+        const { userNumber, stationId, points } = req.body;
+
+        if (!userNumber || !stationId || typeof points !== 'number') {
+            return res.status(400).json({ message: 'Missing or invalid data' });
+        }
+
+        // Use Player model instead of User
+        const Player = require('./models/Player');
+        const player = await Player.findOne({ number: userNumber });
+        if (!player) return res.status(404).json({ message: 'Player not found' });
+
+        // Find the station
+        const station = await Station.findById(stationId);
+        if (!station) return res.status(404).json({ message: 'Station not found' });
+
+        // Update player’s point balance
+        player.points += points;
+        await player.save();
+
+        // Log this transaction
+        const PointLog = require('./models/PointLog');
+        await PointLog.create({
+            user: player._id,
+            station: station._id,
+            points,
+        });
+
+        res.json({ message: 'Points added successfully', newBalance: player.points });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error registering points', error: err.message });
+    }
+});
+
+// Fetch point logs (improved for point logs page)
+app.get('/api/logs/points', async (req, res) => {
+    try {
+        const logs = await require('./models/PointLog')
+            .find()
+            .populate('user', 'name number class points')
+            .populate('station', 'name maxPoints')
+            .sort({ timestamp: -1 });
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching point logs', error: err.message });
+    }
+});
+
+// Edit point log
+app.put('/api/points/logs/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { user, station, points, timestamp } = req.body;
+
+        const PointLog = require('./models/PointLog');
+        const Player = require('./models/Player');
+
+        const log = await PointLog.findById(id);
+        if (!log) return res.status(404).json({ message: 'Log not found' });
+
+        // Adjust old player's points
+        if (log.user.toString() !== user) {
+            const oldPlayer = await Player.findById(log.user);
+            if (oldPlayer) {
+                oldPlayer.points -= log.points;
+                await oldPlayer.save();
+            }
+        } else {
+            const samePlayer = await Player.findById(log.user);
+            if (samePlayer) {
+                samePlayer.points -= log.points;
+                await samePlayer.save();
+            }
+        }
+
+        // Update log
+        log.user = user;
+        log.station = station;
+        log.points = points;
+        log.timestamp = timestamp;
+        await log.save();
+
+        // Add points to new player
+        const newPlayer = await Player.findById(user);
+        if (newPlayer) {
+            newPlayer.points += points;
+            await newPlayer.save();
+        }
+
+        res.json({ message: 'Log updated successfully', log });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating log', error: err.message });
+    }
+});
+
+// Delete/revoke point log
+app.delete('/api/points/logs/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const PointLog = require('./models/PointLog');
+        const Player = require('./models/Player');
+
+        const log = await PointLog.findById(id);
+        if (!log) return res.status(404).json({ message: 'Log not found' });
+
+        // Subtract points from player
+        const player = await Player.findById(log.user);
+        if (player) {
+            player.points -= log.points;
+            await player.save();
+        }
+
+        await log.deleteOne();
+        res.json({ message: 'Log revoked successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error revoking log', error: err.message });
+    }
+});
+
+app.get("/api/auth/accesscode", async (req, res) => {
+    const codeToCheck = req.query.code;
+    try {
+        if (!codeToCheck) {
+            return res.status(401).json({ message: "No code provided" });
+        }
+
+        if (codeToCheck === accessCode) {
+            return res.status(202).json({ message: "Access granted" });
+        } else {
+            return res.status(401).json({ message: "Invalid code" });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Server error" });
+    }
+});
+
 
 app.get('/dashboard', (req, res) => {
     res.sendFile(__dirname + "/public/app/dashboard.html")
@@ -541,8 +704,19 @@ app.get("/display/monitor", (req, res) => {
     res.sendFile(__dirname + "/public/app/monitor.html")
 })
 
+app.get("/dashboard/admin/login-logs", (req, res) => {
+    res.sendFile(__dirname + "/public/app/loginlogs.html")
+})
+
+app.get("/dashboard/admin/points-logs", (req, res) => {
+    res.sendFile(__dirname + "/public/app/pointlogs.html")
+})
 // TEMORARLY
+
+app.get("*", (req, res) => {
+    res.sendFile(__dirname + "/public/app/404.html")
+})
 
 // Server indítás
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, "192.168.1.24", () => console.log(`Server fut a ${PORT} porton`));
+server.listen(PORT, "192.168.1.21", () => console.log(`Server fut a ${PORT} porton`));

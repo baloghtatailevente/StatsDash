@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Játékosok - Sorverseny</title>
+    <title>Tranzakció Napló - Sorverseny</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/base.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter&display=swap">
@@ -33,11 +33,11 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link disabled text-light perm-1" href="/dashboard/players">Játékosok</a>
+                        <a class="nav-link perm-1" href="/dashboard/players">Játékosok</a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link disabled text-light perm-99" href="/dashboard/players">Játékosok</a>
+                        <a class="nav-link perm-99" href="/dashboard/players">Játékosok</a>
                     </li>
 
                     <li class="nav-item">
@@ -53,14 +53,14 @@
                     </li>
 
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle perm-99" href="#" role="button" data-bs-toggle="dropdown"
+                        <a class="nav-link dropdown-toggle perm-99 text-light" href="#" role="button" data-bs-toggle="dropdown"
                             aria-expanded="false">
                             Napló
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/dashboard/admin/login-logs">Azonosítási Napló</a></li>
 
-                            <li><a class="dropdown-item" href="/dashboard/admin/points-logs">Tranzakció Napló</a></li>
+                            <li><a class="dropdown-item disabled" href="/dashboard/admin/points-logs">Tranzakció Napló</a></li>
                         </ul>
                     </li>
 
@@ -78,7 +78,7 @@
                 <div class="form-floating">
                     <input type="text" id="searchInput" class="form-control"
                         placeholder="Keresés név, felhasználónév vagy e-mail alapján..." />
-                    <label for="searchInput">Keresés név, felhasználónév vagy e-mail alapján...</label>
+                    <label for="searchInput">Keresés név, sorszám, állomás, dátum vagy pont alapján...</label>
                 </div>
             </div>
         </div>
@@ -86,7 +86,7 @@
 
     <div class="d-flex justify-content-center mb-3">
         <div class="col-md-3 text-center">
-            <button class="btn btn-success w-100" id="addPlayerBtn">+ Új játékos</button>
+            <button class="btn btn-outline-danger w-100" id="addTransBtn">Azonosítás szükséges!</button>
         </div>
     </div>
     <!-- PLAYERS TABLE -->
@@ -110,34 +110,26 @@
     </table>
 
     <!-- ADD PLAYER MODAL -->
-    <div class="modal fade" id="addPlayerModal" tabindex="-1">
+    <div class="modal fade" id="authModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Új játékos hozzáadása</h5>
+                    <h5 class="modal-title">Azonosítás</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="badAuthCodeAlert">Hibás főszervezői kód</div>
+                    <p class="text-danger">Főszervezői jogosultság szükséges a műveletek feloldásához!</p>
                     <form id="addPlayerForm">
                         <div class="mb-3">
-                            <label for="addName" class="form-label">Név</label>
-                            <input type="text" class="form-control" id="addName">
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col">
-                                <label for="addClass" class="form-label">Osztály</label>
-                                <input type="text" class="form-control" id="addClass" required>
-                            </div>
-                            <div class="col">
-                                <label for="addNumber" class="form-label">Szám</label>
-                                <input type="text" class="form-control" id="addNumber" required>
-                            </div>
+                            <label for="authCode" class="form-label">Kód</label>
+                            <input type="password" class="form-control" id="authCode">
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
-                    <button class="btn btn-success" onclick="addPlayer()">Hozzáadás</button>
+                    <button class="btn btn-success" onclick="authAccessCode()">Ellenőrzés</button>
                 </div>
             </div>
         </div>
@@ -187,6 +179,7 @@
 
     <script>
         const logoutBtn = document.getElementById("logout");
+        let accessGranted = false;
 
         async function logout() {
             const sessionId = localStorage.getItem('sessionId');
@@ -213,6 +206,21 @@
                     row.style.display = match ? "" : "none";
                 });
             });
+
+        async function authAccessCode() {
+            const code = document.getElementById("authCode").value
+            const res = await fetch(`/api/auth/accesscode?code=${code}`)
+            if (res.status === 202) {
+                accessGranted = true
+                fetchPlayers()
+                document.getElementById("badAuthCodeAlert").classList.add("d-none")
+                bootstrap.Modal.getInstance(document.getElementById("authModal")).hide();
+            } else {
+                accessGranted = false
+                document.getElementById("badAuthCodeAlert").classList.remove("d-none")
+                code = ""
+            }
+        }
 
         // --- INIT FUNCTION (KEPT) ---
         async function init() {
@@ -261,8 +269,9 @@
         // --- FETCH PLAYERS ---
         async function fetchPlayers(query = "") {
             try {
-                const res = await fetch('/api/players');
+                const res = await fetch('/api/logs/points');
                 let players = await res.json();
+                console.log(players)
                 if (query) {
                     const q = query.toLowerCase();
                     players = players.filter(p =>
@@ -302,9 +311,9 @@
         }
         // --- SEARCH ---
 
-        // --- ADD PLAYER ---
-        document.getElementById("addPlayerBtn").addEventListener("click", () => {
-            new bootstrap.Modal(document.getElementById("addPlayerModal")).show();
+        // --- AUTHENTICATE ---
+        document.getElementById("addTransBtn").addEventListener("click", () => {
+            new bootstrap.Modal(document.getElementById("authModal")).show();
         });
 
         async function addPlayer() {

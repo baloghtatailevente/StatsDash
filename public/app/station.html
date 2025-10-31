@@ -133,8 +133,26 @@
         <a href="./" class="btn btn-success"><span class="material-symbols-outlined">arrow_circle_left</span></a>
     </div>
 
-</body>
+    <div id="playerInfo" style="
+        position: fixed;
+        top: 10px;
+        left: -250px;
+        width: 240px;
+        padding: 10px;
+        background: rgba(0,123,255,0.9);
+        color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        transition: left 0.5s;
+    ">
+        <strong id="playerName">Név: -</strong><br>
+        <span id="playerNumber">Sorszám: -</span><br>
+        <span id="playerClass">Osztály: -</span><br>
+        <span id="playerPoints">Pont: -</span>
+    </div>
 
+</body>
+<script src="/js/auth0.js"></script>
 <script>
     const codeInput = document.getElementById("code");
     const keypadButtons = document.querySelectorAll(".keypad-btn");
@@ -142,43 +160,121 @@
     const confirmBtn = document.getElementById("confirmBtn");
     const delayRadios = document.querySelectorAll('input[name="delay-radio"]');
     const statusRadios = document.querySelectorAll('input[name="vbtn-radio"]');
+
+    let step = 1;
     let currentCode = "";
+    let userData = null;
     let stationData = null;
 
-    // Keypad logic
-    const updateInput = v => { codeInput.value = currentCode = v; };
-    document.querySelector(".container").addEventListener("click", e => {
-        if (e.target.classList.contains("keypad-btn")) updateInput(currentCode + e.target.textContent);
-        if (e.target === backBtn) updateInput(currentCode.slice(0, -1));
-        if (e.target === confirmBtn) alert("Kód elküldve: " + currentCode);
-    });
-
-    const apiFetch = async (url, options = {}) => {
-        const sessionId = localStorage.getItem("sessionId");
-        const headers = {
-            "Content-Type": "application/json",
-            Authorization: sessionId,
-            ...options.headers,
-        };
-        const res = await fetch(url, { ...options, headers });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || "Hiba történt");
-        return data;
+    // Update input field and currentCode
+    const updateInput = v => {
+        codeInput.value = currentCode = v;
     };
 
-    const initUser = async () => {
-        try {
-            const data = await apiFetch("/api/me");
-            const rank = data.rank;
-            const hideSelectors = { 0: ".perm-1, .perm-99", 1: ".perm-0, .perm-99", 99: ".perm-0, .perm-1" }[rank];
-            document.querySelectorAll(hideSelectors).forEach(el => (el.style.display = "none"));
-            const desc = { 0: "", 1: "Játékosregisztációs jogkör", 99: "Adminisztrációs jogkör" }[rank];
-            if (desc) document.getElementById("desc-text").innerText = desc;
-        } catch (err) {
-            localStorage.removeItem("sessionId");
-            window.location.href = "/";
+    // Reset to step 1 state
+    const resetToStep1 = () => {
+        step = 1;
+        currentCode = "";
+        userData = null;
+        codeInput.value = "";
+        document.getElementById("msg").innerText = "Kérlek add meg a játékos sorszámát!";
+        // Hide the player info div
+        document.getElementById("playerInfo").style.left = "-250px";
+    };
+
+    // Keypad click handler
+    document.querySelector(".container").addEventListener("click", async e => {
+        if (e.target.classList.contains("keypad-btn")) {
+            // Append digit to currentCode
+            updateInput(currentCode + e.target.textContent);
         }
-    };
+        if (e.target === backBtn) {
+            // Remove last character
+            updateInput(currentCode.slice(0, -1));
+        }
+        if (e.target === confirmBtn) {
+            if (step === 1) {
+                // Treat currentCode as player number
+                const number = currentCode.trim();
+                if (!number) {
+                    alert("Kérem, adjon meg egy játékos sorszámot!");
+                    return;
+                }
+                try {
+                    const user = await apiFetch(`/api/users/number/${number}`);
+                    if (user && (user.name || user._id)) {
+                        // Before proceeding, check if player already has a log entry for this station
+                        userData = user;
+                        // Defensive: ensure stationData is loaded
+                        if (!stationData || !stationData._id) {
+                            alert("Állomás adatok nem elérhetők!");
+                            resetToStep1();
+                            return;
+                        }
+                        // Check if player already has a point log at this station
+                        try {
+                            const logs = await apiFetch(`/api/points/logs?playerId=${userData._id}&stationId=${stationData._id}`);
+                            if (Array.isArray(logs) && logs.length > 0) {
+                                alert("A játékos már szerepelt ezen az állomáson!");
+                                resetToStep1();
+                                return;
+                            }
+                        } catch (err) {
+                            // If API fails, treat as not existing (or optionally, show error)
+                            // Optionally: alert("Nem sikerült ellenőrizni a pontbejegyzést!");
+                        }
+                        // Step 1 → Step 2 transition: show points prompt with max points
+                        document.getElementById("msg").innerText = `Add meg az elért pontot (Max: ${stationData.max_points})`;
+                        currentCode = "";
+                        codeInput.value = "";
+                        step = 2;
+                        console.log("Points" + userData.points)
+                        console.log(userData)
+                        // Update player info floating div and show it
+                        document.getElementById("playerName").innerText = `Név: ${userData.name}`;
+                        document.getElementById("playerNumber").innerText = `Sorszám: ${userData.number}`;
+                        document.getElementById("playerClass").innerText = `Osztály: ${userData.class}`;
+                        document.getElementById("playerPoints").innerText = `Pont: ∑ ${userData.points}`;
+                        document.getElementById("playerInfo").style.left = "10px";
+                    } else {
+                        alert("Felhasználó nem található!");
+                        resetToStep1();
+                    }
+                } catch (err) {
+                    alert("Játékos nem található!");
+                    resetToStep1();
+                }
+            } else if (step === 2) {
+                // Treat currentCode as points
+                const points = currentCode.trim();
+                if (!points || isNaN(points) || points < 0) {
+                    alert("Kérem, adjon meg egy érvényes pontszámot!");
+                    return;
+                }
+                try {
+                    await apiFetch(`/api/points/register`, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            userNumber: userData.number,
+                            stationId: stationData._id,
+                            points: Number(points)
+                        }),
+                    });
+                    codeInput.value = "✅";
+                    currentCode = "";
+                    step = 1;
+                    userData = null;
+                    document.getElementById("msg").innerText = "Kérlek add meg a játékos sorszámát!";
+                    setTimeout(() => {
+                        codeInput.value = "";
+                    }, 2000);
+                } catch (err) {
+                    alert("Hiba történt! Írd fel papírra!");
+                    resetToStep1();
+                }
+            }
+        }
+    });
 
     const initStation = async () => {
         const stationId = new URLSearchParams(window.location.search).get("id");
@@ -205,6 +301,8 @@
             console.debug("[DEBUG] stationData.delay:", stationData.delay);
             console.debug("[DEBUG] delayMap:", delayMap);
             if (!delayMap.includes(stationData.delay)) alert("Hibás várakozási idő!");
+            // Initialize step 1
+            resetToStep1();
         } catch (err) {
             console.error("Init station error:", err);
         }
@@ -250,8 +348,6 @@
         )
     );
 
-    (async () => { await Promise.all([initUser(), initStation()]); })();
+    (async () => { await initStation(); })();
 </script>
-</body>
-
 </html>

@@ -99,13 +99,28 @@
             margin: auto;
             margin-bottom: 20px;
         }
+
+        /* Dark-fade-in refresh animation */
+        .refresh-animation {
+            animation: darkFade 0.5s ease;
+        }
+
+        @keyframes darkFade {
+            0% {
+                background-color: rgba(0, 0, 0, 0.2);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="container py-5 text-center">
         <h2 class="fw-bold mb-2">Állomás Figyelő</h2>
-        <p class="text-muted mb-2">Állomások valós idejű állapota — 2025. május 10.</p>
+        <p class="text-muted mb-2">Állomások valós idejű állapota — <span id="titleDate"></span></p>
 
         <div class="legend desc">
             <div><span class="status-dot dot-open"></span>Nyitva</div>
@@ -116,28 +131,42 @@
         <div class="row g-4 justify-content-center" id="station-container">
         </div>
     </div>
+
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Set the date in Hungarian format
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString("hu-HU", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+        document.getElementById("titleDate").textContent = formattedDate;
+
         async function loadStations() {
             try {
                 const response = await fetch('/api/stations');
                 if (!response.ok) throw new Error('Network response was not ok');
                 const stations = await response.json();
                 const container = document.getElementById('station-container');
+                container.innerHTML = ""; // clear before rendering
+
                 stations.forEach(station => {
                     const col = document.createElement('div');
                     col.className = 'col-12 col-sm-6 col-md-3';
 
                     const card = document.createElement('div');
                     card.className = 'station-card';
+                    card.dataset.stationId = station._id; // added for refresh animation
                     if (station.delay > 0) {
                         card.classList.add('delayed');
                     }
 
                     const topDiv = document.createElement('div');
                     const h5 = document.createElement('h5');
-                    h5.textContent = 'ST' + String(station.number).padStart(3, '0');
+                    h5.textContent = station.name;
                     const p = document.createElement('p');
-                    p.textContent = station.name;
+                    p.textContent = `#${station.number}`;
                     topDiv.appendChild(h5);
                     topDiv.appendChild(p);
 
@@ -151,14 +180,14 @@
                     const statusDot = document.createElement('span');
                     statusDot.className = 'status-dot ' + (station.status ? 'dot-open' : 'dot-closed');
                     statusTextDiv.appendChild(statusDot);
-                    const statusText = document.createTextNode(station.status ? 'Open' : 'Closed');
+                    const statusText = document.createTextNode(station.status ? 'Nyitva' : 'Zárva');
                     statusTextDiv.appendChild(statusText);
 
                     if (station.delay > 0) {
                         bottomDiv.appendChild(statusTextDiv);
                         const delayDiv = document.createElement('div');
                         delayDiv.className = 'delay';
-                        delayDiv.textContent = '⏱ ' + station.delay + ' min delay';
+                        delayDiv.textContent = '⏱ ' + station.delay + 'p késés';
                         bottomDiv.appendChild(delayDiv);
                         card.appendChild(bottomDiv);
                     } else {
@@ -172,16 +201,42 @@
                 console.error('Failed to load stations:', error);
             }
         }
+
         loadStations();
 
-        const ws = new WebSocket("ws://192.168.1.24:8080");
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === "update" && data.entity === "station") {
-                // Refresh station list
-                loadStations();
-            }
-        };
+        // Socket.io client for real-time updates with animation
+        const socket = io();
+        socket.on("stationsUpdated", async () => {
+            const container = document.getElementById('station-container');
+
+            // Store old stations data by ID
+            const oldStationsMap = {};
+            Array.from(container.children).forEach(col => {
+                const card = col.querySelector('.station-card');
+                oldStationsMap[card.dataset.stationId] = {
+                    status: card.querySelector('.status-dot').className,
+                    delay: card.querySelector('.delay') ? card.querySelector('.delay').textContent : null
+                };
+            });
+
+            // Reload stations
+            await loadStations();
+
+            // Animate only the cards that changed
+            Array.from(container.children).forEach(col => {
+                const card = col.querySelector('.station-card');
+                const oldData = oldStationsMap[card.dataset.stationId];
+                if (!oldData) return; // new card
+
+                const newStatusClass = card.querySelector('.status-dot').className;
+                const newDelay = card.querySelector('.delay') ? card.querySelector('.delay').textContent : null;
+
+                if (oldData.status !== newStatusClass || oldData.delay !== newDelay) {
+                    card.classList.add('refresh-animation');
+                    card.addEventListener('animationend', () => card.classList.remove('refresh-animation'), { once: true });
+                }
+            });
+        });
     </script>
 </body>
 

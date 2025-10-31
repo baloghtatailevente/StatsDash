@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azonosítási Napló - Sorverseny</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
+    <link rel="stylesheet" href="/base.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+
+<body>
+    <script src="/js/auth99.js"></script>
+    <script src="/public/utils.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            checkPermissions();
+        });
+    </script>
+    <nav class="navbar navbar-expand-lg bg-secondary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><img src="/img/logo.png" alt="Logo" width="60" height="55"
+                    class="d-inline-block align-text-top" /></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="/dashboard">Kezdőlap</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link perm-0" href="/dashboard/station?id=xyz">Állomás</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link perm-1" href="/dashboard/players">Játékosok</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/players">Játékosok</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/admin/users">Felhasználók</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/admin/stations">Állomások</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/admin/statisztika">Statisztika</a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            Napló
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item disabled" href="/dashboard/admin/login-logs">Azonosítási
+                                    Napló</a>
+                            </li>
+
+                            <li>
+                                <li><a class="dropdown-item" href="/dashboard/admin/points-logs">Tranzakció Napló</a></li>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link perm-99" href="/dashboard/system">Rendszer</a>
+                    </li>
+                </ul>
+                <button class="btn btn-light" id="logout" onclick="logout()">
+                    Kijelentkezés
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
+        integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
+        crossorigin="anonymous"></script>
+    <!-- SEARCH-ENABLED LOGIN LOG TABLE -->
+    <div class="container my-3">
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="form-floating">
+                    <input type="text" id="searchInput" class="form-control"
+                        placeholder="Keresés felhasználó, IP vagy dátum alapján..." />
+                    <label for="searchInput">Keresés felhasználó, IP vagy dátum alapján...</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="logTabs">
+      <li class="nav-item">
+        <a class="nav-link active" id="identified-tab" href="#">Azonosított</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="archived-tab" href="#">Archív</a>
+      </li>
+    </ul>
+
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Felhasználó</th>
+                <th scope="col">IP Cím</th>
+                <th scope="col">Sikeres</th>
+                <th scope="col">Dátum</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">1</th>
+                <td>example_user</td>
+                <td>::1</td>
+                <td>Igen</td>
+                <td>2025-10-13 12:09</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        function logout() {
+            localStorage.removeItem("sessionId");
+            window.location.href = "/";
+        }
+
+        async function init() {
+            const sessionId = localStorage.getItem("sessionId");
+            if (!sessionId) {
+                window.location.href = "/";
+                return;
+            }
+            try {
+                const response = await fetch("/api/me", {
+                    headers: { "Authorization": sessionId }
+                });
+                if (!response.ok) {
+                    //localStorage.removeItem("sessionId");
+                    window.location.href = "/";
+                    return;
+                }
+                const user = await response.json();
+                if (user.rank < 99) {
+                    window.location.href = "/dashboard";
+                    return;
+                }
+                if (user.rank == 0) {
+                    document
+                        .querySelectorAll(".perm-1, .perm-99")
+                        .forEach((el) => (el.style.display = "none"));
+                } else if (user.rank == 1) {
+                    document
+                        .querySelectorAll(".perm-0, .perm-99")
+                        .forEach((el) => (el.style.display = "none"));
+                } else if (user.rank == 99) {
+                    document
+                        .querySelectorAll(".perm-0, .perm-1")
+                        .forEach((el) => (el.style.display = "none"));
+                }
+            } catch (err) {
+                localStorage.removeItem("sessionId");
+                window.location.href = "/login";
+            }
+        }
+
+        document.getElementById("logout").addEventListener("click", logout);
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await init();
+            loadLoginLogs();
+        });
+    </script>
+
+    <script>
+        document.getElementById("searchInput").addEventListener("input", function (e) {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll("table tbody tr");
+            rows.forEach((row) => {
+                const cells = Array.from(row.querySelectorAll("td")).map((td) =>
+                    td.textContent.toLowerCase()
+                );
+                const match = cells.some((text) => text.includes(query));
+                row.style.display = match ? "" : "none";
+            });
+        });
+
+        async function loadLoginLogs() {
+            try {
+                const [logsRes, usersRes] = await Promise.all([
+                    fetch("/api/logs/auth"),
+                    fetch("/api/users"),
+                ]);
+                const logs = await logsRes.json();
+                const users = await usersRes.json();
+
+                // Create lookup map for users
+                const userMap = {};
+                users.forEach((user) => {
+                    userMap[user._id] = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Ismeretlen";
+                });
+
+                // Separate logs into identified and archived
+                const identifiedLogs = [];
+                const archivedLogs = [];
+
+                logs.forEach(log => {
+                    if (log.user && userMap[log.user]) {
+                        identifiedLogs.push(log);
+                    } else {
+                        archivedLogs.push(log);
+                    }
+                });
+
+                const tbody = document.querySelector("table tbody");
+
+                function renderLogs(logArray) {
+                    tbody.innerHTML = "";
+                    logArray.forEach((log, index) => {
+                        const userName = userMap[log.user] || "Ismeretlen";
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <th scope="row">${index + 1}</th>
+                            <td>${userName}</td>
+                            <td>${log.ip || "-"}</td>
+                            <td>${log.success ? "Igen" : "Nem"}</td>
+                            <td>${new Date(log.date).toLocaleString("hu-HU")}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                // Initial render: identified logs
+                renderLogs(identifiedLogs);
+
+                // Tab switching logic
+                const identifiedTab = document.getElementById("identified-tab");
+                const archivedTab = document.getElementById("archived-tab");
+
+                identifiedTab.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    identifiedTab.classList.add("active");
+                    archivedTab.classList.remove("active");
+                    renderLogs(identifiedLogs);
+                });
+
+                archivedTab.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    archivedTab.classList.add("active");
+                    identifiedTab.classList.remove("active");
+                    renderLogs(archivedLogs);
+                });
+
+            } catch (err) {
+                console.error("Nem sikerült betölteni a naplót:", err);
+            }
+        }
+
+    </script>
+</body>
+
+</html>

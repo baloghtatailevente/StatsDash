@@ -20,16 +20,19 @@
         <form class="p-4 border rounded bg-light" style="width: 400px; max-width: 90%;" id="userForm">
             <h1 class="text-center mb-4 fw-bold text-primary font-primary">Bejelentkezés</h1>
             <div class="form-floating mb-3">
-                <input type="text" class="form-control font-primary border-dark-subtle" id="user" placeholder="pelda.bela">
+                <input type="text" class="form-control font-primary border-dark-subtle" id="user"
+                    placeholder="pelda.bela">
                 <label for="user">Felhasználónév</label>
             </div>
 
             <div class="form-floating mb-3">
-                <input type="password" class="form-control font-primary border-dark-subtle" id="pass" placeholder="azenjelszavam1234">
+                <input type="password" class="form-control font-primary border-dark-subtle" id="pass"
+                    placeholder="azenjelszavam1234">
                 <label for="pass">Jelszó</label>
             </div>
 
-            <button type="submit" class="btn btn-outline-primary w-100 font-primary">BEJELENTKEZÉS</button>
+            <button type="submit" id="userSubmitButton"
+                class="btn btn-outline-primary w-100 font-primary">BEJELENTKEZÉS</button>
 
             <hr class="my-4">
 
@@ -42,10 +45,12 @@
             <h1 class="text-center mb-4 fw-bold text-primary font-primary">Bejelentkezés</h1>
             <div class="mb-3">
                 <label for="adminCode" class="form-label font-primary">Kód</label>
-                <input type="password" class="form-control font-primary" id="adminCode" placeholder="Írd be az admin kódot">
+                <input type="password" class="form-control font-primary" id="adminCode"
+                    placeholder="Írd be az admin kódot">
             </div>
 
-            <button type="submit" class="btn btn-outline-primary w-100 font-primary">BEJELENTKEZÉS</button>
+            <button type="submit" id="submitButton"
+                class="btn btn-outline-primary w-100 font-primary">BEJELENTKEZÉS</button>
 
             <hr class="my-4">
 
@@ -73,23 +78,23 @@
         });
 
         adminBtn.addEventListener('click', () => {
-                userForm.classList.add('d-none');
-                adminForm.classList.remove('d-none');
-            });
+            userForm.classList.add('d-none');
+            adminForm.classList.remove('d-none');
+        });
 
-            backToUser.addEventListener('click', (e) => {
-                e.preventDefault();
-                adminForm.classList.add('d-none');
-                userForm.classList.remove('d-none');
-            });
+        backToUser.addEventListener('click', (e) => {
+            e.preventDefault();
+            adminForm.classList.add('d-none');
+            userForm.classList.remove('d-none');
+        });
 
-            const sessionId = localStorage.getItem('sessionId');
+        const sessionId = localStorage.getItem('sessionId');
 
-            if (sessionId) {
-                // Opcionálisan: ellenőrizhetjük a szerveren is a /api/me végponttal
-                fetch('/api/me', {
-                    headers: { 'Authorization': sessionId }
-                })
+        if (sessionId) {
+            // Opcionálisan: ellenőrizhetjük a szerveren is a /api/me végponttal
+            fetch('/api/me', {
+                headers: { 'Authorization': sessionId }
+            })
                 .then(res => {
                     if (res.ok) {
                         // Még mindig érvényes session → redirect
@@ -100,78 +105,87 @@
                     }
                 })
                 .catch(() => localStorage.removeItem('sessionId'));
+        }
+
+
+        // -----------------------
+        // FELHASZNÁLÓ BEJELENTKEZÉS
+        // -----------------------
+
+        userForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('user').value.trim();
+            const password = document.getElementById('pass').value.trim();
+
+            if (!username || !password) {
+                alert('Kérlek, töltsd ki az összes mezőt!');
+                return;
             }
 
+            document.getElementById("userSubmitButton").innerHTML = `<div class="spinner-grow" style="height: 15px; width: 15px;" role="status"><span class="visually-hidden">Loading...</span></div>`
 
-            // -----------------------
-            // FELHASZNÁLÓ BEJELENTKEZÉS
-            // -----------------------
-            userForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const username = document.getElementById('user').value.trim();
-                const password = document.getElementById('pass').value.trim();
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
 
-                if (!username || !password) {
-                    alert('Kérlek, töltsd ki az összes mezőt!');
+                const data = await response.json();
+
+                if (!response.ok) {
+                    document.getElementById("userSubmitButton").innerHTML = ""
+                    document.getElementById("userSubmitButton").innerText = "BEJELENTKEZÉS"
+                    alert(data.message || 'Hiba történt a bejelentkezés során.');
                     return;
                 }
 
-                try {
-                    const response = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, password })
-                    });
+                // Ha sikeres → Session ID tárolása localStorage-ben
+                localStorage.setItem('sessionId', data.sessionId);
 
-                    const data = await response.json();
+                // Átirányítás dashboardra
+                window.location.href = '/dashboard';
+            } catch (err) {
+                console.error(err);
+                alert('Hálózati hiba történt, próbáld újra.');
+            }
+        });
 
-                    if (!response.ok) {
-                        alert(data.message || 'Hiba történt a bejelentkezés során.');
-                        return;
-                    }
+        adminForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('adminCode').value.trim();
+            if (!code) {
+                alert('Kérlek, írd be az admin kódot!');
+                return;
+            }
+            document.getElementById("submitButton").innerHTML = `<div class="spinner-grow" style="height: 15px; width: 15px;" role="status"><span class="visually-hidden">Loading...</span></div>`;
+            try {
+                // Példa: POST request az admin kód ellenőrzésére
+                const response = await fetch('/api/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
 
-                    // Ha sikeres → Session ID tárolása localStorage-ben
-                    localStorage.setItem('sessionId', data.sessionId);
+                const data = await response.json();
 
-                    // Átirányítás dashboardra
-                    window.location.href = '/dashboard';
-                } catch (err) {
-                    console.error(err);
-                    alert('Hálózati hiba történt, próbáld újra.');
-                }
-            });
-
-            adminForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const code = document.getElementById('adminCode').value.trim();
-                if (!code) {
-                    alert('Kérlek, írd be az admin kódot!');
+                if (!response.ok) {
+                    document.getElementById("submitButton").innerHTML = "";
+                    document.getElementById("submitButton").innerText = "BEJELENTKEZÉS";
+                    alert(data.message || 'Hibás admin kód.');
                     return;
                 }
 
-                try {
-                    // Példa: POST request az admin kód ellenőrzésére
-                    const response = await fetch('/api/admin-login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ code })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        alert(data.message || 'Hibás admin kód.');
-                        return;
-                    }
-
-                    // Sikeres admin login → dashboard
-                    localStorage.setItem('sessionId', data.sessionId);
-                    window.location.href = '/dashboard';
-                } catch (err) {
-                    console.error(err);
-                    alert('Hálózati hiba történt, próbáld újra.');
-                }
-            });
+                // Sikeres admin login → dashboard
+                localStorage.setItem('sessionId', data.sessionId);
+                window.location.href = '/dashboard';
+            } catch (err) {
+                document.getElementById("submitButton").innerHTML = "";
+                document.getElementById("submitButton").innerText = "BEJELENTKEZÉS";
+                console.error(err);
+                alert('Hálózati hiba történt, próbáld újra.');
+            }
+        });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
