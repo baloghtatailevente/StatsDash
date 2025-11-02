@@ -171,10 +171,6 @@
                             <label for="editPoints" class="form-label">Pontok</label>
                             <input type="number" class="form-control" id="editPoints">
                         </div>
-                        <div class="mb-3">
-                            <label for="editLastStation" class="form-label">Utolsó állomás</label>
-                            <input type="text" class="form-control" id="editLastStation" placeholder="-" disabled>
-                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -261,8 +257,30 @@
         // --- FETCH PLAYERS ---
         async function fetchPlayers(query = "") {
             try {
-                const res = await fetch('/api/players');
-                let players = await res.json();
+                // Fetch players and logs
+                const [playersRes, logsRes, stationsRes] = await Promise.all([
+                    fetch('/api/players'),
+                    fetch('/api/logs/points'),
+                    fetch('/api/stations'),
+                ]);
+
+                const players = await playersRes.json();
+                const logs = await logsRes.json();
+                const stations = await stationsRes.json();
+
+                // Build a map of last stations by user
+                const lastStations = {};
+                logs.forEach(log => {
+                    const userId = log.user;
+                    if (!lastStations[userId] || new Date(log.timestamp) > new Date(lastStations[userId].timestamp)) {
+                        lastStations[userId] = { station: log.station, timestamp: log.timestamp };
+                    }
+                });
+                //console.log(lastStations)
+
+                // Assign last station to players
+
+                // Filter if search query exists
                 if (query) {
                     const q = query.toLowerCase();
                     players = players.filter(p =>
@@ -272,17 +290,19 @@
                     );
                 }
 
+                // Render table
                 const tbody = document.querySelector("table tbody");
                 tbody.innerHTML = "";
                 players.forEach((p, i) => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
+                const station = stations.find(st => st._id === lastStations[p._id]?.station)
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
                 <th>${i + 1}</th>
                 <td>${p.name}</td>
                 <td>${p.class}</td>
                 <td>${p.number}</td>
-                <td>${p.points ?? 0}</td> <!-- ÚJ -->
-                <td>${p.last_station || '-'}</td>
+                <td>${p.points ?? 0}</td>
+                <td>${station?.name || "-"}</td>
                 <td>
                     <div class="btn-group perm-99">
                         <button class="btn btn-outline-success" onclick="openEditModal('${p._id}')">
@@ -297,8 +317,10 @@
                     tbody.appendChild(tr);
                 });
 
-                init()
-            } catch (err) { console.error(err); }
+                init();
+            } catch (err) {
+                console.error(err);
+            }
         }
         // --- SEARCH ---
 
@@ -339,7 +361,6 @@
                 document.getElementById("editClass").value = p.class;
                 document.getElementById("editNumber").value = p.number;
                 document.getElementById("editPoints").value = p.points ?? 0;
-                document.getElementById("editLastStation").value = p.last_station || "";
                 new bootstrap.Modal(document.getElementById("editPlayerModal")).show();
             });
         }
@@ -352,7 +373,6 @@
                 class: document.getElementById("editClass").value,
                 number: document.getElementById("editNumber").value,
                 points: parseInt(document.getElementById("editPoints").value) || 0,
-                last_station: document.getElementById("editLastStation").value
             };
             try {
                 const res = await fetch(`/api/players/${id}`, {

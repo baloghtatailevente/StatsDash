@@ -53,14 +53,15 @@
                     </li>
 
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle perm-99 text-light" href="#" role="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
+                        <a class="nav-link dropdown-toggle perm-99 text-light" href="#" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                             Napló
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/dashboard/admin/login-logs">Azonosítási Napló</a></li>
 
-                            <li><a class="dropdown-item disabled" href="/dashboard/admin/points-logs">Tranzakció Napló</a></li>
+                            <li><a class="dropdown-item disabled" href="/dashboard/admin/points-logs">Tranzakció
+                                    Napló</a></li>
                         </ul>
                     </li>
 
@@ -95,10 +96,11 @@
             <tr>
                 <th>#</th>
                 <th>Név</th>
-                <th>Osztály</th>
                 <th>Szám</th>
+                <th>Osztály</th>
+                <th>Állomás</th>
                 <th>∑</th> <!-- ÚJ OSZLOP -->
-                <th>Utolsó Állomás</th>
+                <th>Dátum</th>
                 <th class="perm-99">Műveletek</th>
             </tr>
         </thead>
@@ -109,7 +111,7 @@
         </tbody>
     </table>
 
-    <!-- ADD PLAYER MODAL -->
+    <!-- ADD TRANSACTION MODAL (Azonosítás) -->
     <div class="modal fade" id="authModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -177,7 +179,18 @@
         </div>
     </div>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery (required by bootstrap-select) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+
+
     <script>
+        $('.selectpicker').selectpicker();
         const logoutBtn = document.getElementById("logout");
         let accessGranted = false;
 
@@ -208,6 +221,8 @@
             });
 
         async function authAccessCode() {
+            const addTransBtn = document.getElementById("addTransBtn")
+
             const code = document.getElementById("authCode").value
             const res = await fetch(`/api/auth/accesscode?code=${code}`)
             if (res.status === 202) {
@@ -215,6 +230,9 @@
                 fetchPlayers()
                 document.getElementById("badAuthCodeAlert").classList.add("d-none")
                 bootstrap.Modal.getInstance(document.getElementById("authModal")).hide();
+                addTransBtn.classList.remove("btn-outline-danger")
+                addTransBtn.classList.add("btn-success")
+                addTransBtn.innerText = "+ Új tranzakció"
             } else {
                 accessGranted = false
                 document.getElementById("badAuthCodeAlert").classList.remove("d-none")
@@ -270,28 +288,42 @@
         async function fetchPlayers(query = "") {
             try {
                 const res = await fetch('/api/logs/points');
-                let players = await res.json();
-                console.log(players)
+                let logs = await res.json();
+                console.log(logs)
                 if (query) {
                     const q = query.toLowerCase();
-                    players = players.filter(p =>
+                    logs = logs.filter(p =>
                         (p.name || "").toLowerCase().includes(q) ||
                         (p.class || "").toLowerCase().includes(q) ||
-                        (p.number || "").includes(q)
+                        (p.number || "").includes(q) ||
+                        (p.point || "").includes(q)
                     );
                 }
 
+                const res2 = await fetch('/api/players');
+                let players = await res2.json();
+                console.log(players)
+
+                const res3 = await fetch('/api/stations')
+                let stations = await res3.json()
+                console.log(stations)
+
                 const tbody = document.querySelector("table tbody");
                 tbody.innerHTML = "";
-                players.forEach((p, i) => {
+                logs.forEach((p, i) => {
+                    const player = players.find(plr => plr._id === p.user);
+                    const station = stations.find(st => st._id === p.station)
+                    // console.log("Station: " + station)
+                    // console.log("Datas: " + station.name)
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
                 <th>${i + 1}</th>
-                <td>${p.name}</td>
-                <td>${p.class}</td>
-                <td>${p.number}</td>
+                <td>${player.name || "Ismeretlen"}</td>
+                <td>#${player.number || "-"}</td>
+                <td>${player.class || "-"}</td>
+                <td>${station.name || "-"}</td>
                 <td>${p.points ?? 0}</td> <!-- ÚJ -->
-                <td>${p.last_station || '-'}</td>
+                <td>${new Date(p.timestamp).toLocaleString("hu-HU") || '-'}</td>
                 <td>
                     <div class="btn-group perm-99">
                         <button class="btn btn-outline-success" onclick="openEditModal('${p._id}')">
@@ -313,7 +345,11 @@
 
         // --- AUTHENTICATE ---
         document.getElementById("addTransBtn").addEventListener("click", () => {
-            new bootstrap.Modal(document.getElementById("authModal")).show();
+            if (!accessGranted) {
+                new bootstrap.Modal(document.getElementById("authModal")).show();
+            } else {
+                new bootstrap.Modal(document.getElementById("addModal")).show();
+            }
         });
 
         async function addPlayer() {

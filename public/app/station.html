@@ -214,6 +214,7 @@
                         // Check if player already has a point log at this station
                         try {
                             const logs = await apiFetch(`/api/points/logs?playerId=${userData._id}&stationId=${stationData._id}`);
+                            console.log(logs)
                             if (Array.isArray(logs) && logs.length > 0) {
                                 alert("A játékos már szerepelt ezen az állomáson!");
                                 resetToStep1();
@@ -247,7 +248,7 @@
             } else if (step === 2) {
                 // Treat currentCode as points
                 const points = currentCode.trim();
-                if (!points || isNaN(points) || points < 0) {
+                if (!points || isNaN(points) || points < 0 || points > stationData.max_points) {
                     alert("Kérem, adjon meg egy érvényes pontszámot!");
                     return;
                 }

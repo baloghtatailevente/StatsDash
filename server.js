@@ -553,6 +553,8 @@ app.post('/api/points/register', async (req, res) => {
         const player = await Player.findOne({ number: userNumber });
         if (!player) return res.status(404).json({ message: 'Player not found' });
 
+        console.log(player)
+
         // Find the station
         const station = await Station.findById(stationId);
         if (!station) return res.status(404).json({ message: 'Station not found' });
@@ -579,11 +581,31 @@ app.post('/api/points/register', async (req, res) => {
 // Fetch point logs (improved for point logs page)
 app.get('/api/logs/points', async (req, res) => {
     try {
-        const logs = await require('./models/PointLog')
-            .find()
-            .populate('user', 'name number class points')
-            .populate('station', 'name maxPoints')
-            .sort({ timestamp: -1 });
+        const PointLog = require('./models/PointLog');
+        const { playerId, stationId } = req.query;
+
+        const query = {};
+        if (playerId) query.user = playerId;
+        if (stationId) query.station = stationId;
+
+        const logs = await PointLog.find(query).sort({ timestamp: -1 });
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching point logs', error: err.message });
+    }
+});
+
+// Fetch point logs (for checking if player has been at station)
+app.get('/api/points/logs', async (req, res) => {
+    try {
+        const PointLog = require('./models/PointLog');
+        const { playerId, stationId } = req.query;
+
+        const query = {};
+        if (playerId) query.user = playerId;
+        if (stationId) query.station = stationId;
+
+        const logs = await PointLog.find(query).sort({ timestamp: -1 });
         res.json(logs);
     } catch (err) {
         res.status(500).json({ message: 'Error fetching point logs', error: err.message });
@@ -719,4 +741,4 @@ app.get("*", (req, res) => {
 
 // Server indítás
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, "192.168.1.21", () => console.log(`Server fut a ${PORT} porton`));
+server.listen(PORT, () => console.log(`Server fut a ${PORT} porton`));
