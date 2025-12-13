@@ -90,7 +90,7 @@
             <button class="btn btn-outline-danger w-100" id="addTransBtn">Azonosítás szükséges!</button>
         </div>
         <div class="col-md-3 text-center">
-            <button class="btn btn-primary w-100 ms-3" id="addTransBtn">Érvényesítés</button>
+            <button class="btn btn-primary w-100 ms-3" id="validateBtn">Érvényesítés</button>
         </div>
     </div>
     <!-- PLAYERS TABLE -->
@@ -150,13 +150,10 @@
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-danger d-none" id="badAuthCodeAlert">Hibás főszervezői kód</div>
-                    <p class="text-danger">Főszervezői jogosultság szükséges az adatok ellenőrzéséhez és érvényesítéséhez!</p>
-                    <form id="addPlayerForm">
-                        <div class="mb-3">
-                            <label for="authCode" class="form-label">Kód</label>
-                            <input type="password" class="form-control" id="authCode">
-                        </div>
-                    </form>
+                    <p class="text-danger">Főszervezői jogosultság szükséges az adatok ellenőrzéséhez és
+                        érvényesítéséhez!</p>
+                    <button class="btn btn-outline-success w-100" id="startCheck" onclick="startCheck()">ELLENŐRZÉS INDÍTÁSA</button>
+                    <div class="alert alert-secondary mt-2 d-none" id="checkLog"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
@@ -259,6 +256,20 @@
             }
         }
 
+        async function startCheck() {
+            const logAlert = document.getElementById("checkLog")
+
+            const button = document.getElementById("startCheck")
+            button.disabled = true
+            button.innerText = "Folyamatban..."
+            const res = await fetch('http://localhost:8080/start', { method: 'GET' })
+            const result = await res.json()
+            //console.log(result)
+            logAlert.classList.remove("d-none")
+            logAlert.innerText = result || "Érvényesítés befejeződött."
+            button.disabled = false
+            button.innerText = "ELLENŐRZÉS INDÍTÁSA"
+        }
 
         // --- FETCH PLAYERS ---
         async function fetchPlayers(query = "") {
@@ -278,7 +289,7 @@
 
                 const res2 = await fetch('/api/players');
                 let players = await res2.json();
-                console.log(players)
+                console.log("First player log: " + players)
 
                 const res3 = await fetch('/api/stations')
                 let stations = await res3.json()
@@ -287,17 +298,34 @@
                 const tbody = document.querySelector("table tbody");
                 tbody.innerHTML = "";
                 logs.forEach((p, i) => {
-                    const player = players.find(plr => plr._id === p.user);
+                    const player = players.find(plr => {
+                        const plrIdStr =
+                            plr._id?.$oid ??
+                            plr._id ??
+                            plr.id ??
+                            null;
+
+                        const userIdStr =
+                            p.user?.$oid ??
+                            p.user?._id?.$oid ??
+                            p.user?._id ??
+                            p.user ??
+                            null;
+
+                        return plrIdStr === userIdStr;
+                    });
                     const station = stations.find(st => st._id === p.station)
                     // console.log("Station: " + station)
                     // console.log("Datas: " + station.name)
+                    console.log("Player data: " + player)
+                    console.log("Station data" + station)
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
                 <th>${i + 1}</th>
-                <td>${player.name || "Ismeretlen"}</td>
-                <td>#${player.number || "-"}</td>
-                <td>${player.class || "-"}</td>
-                <td>${station.name || "-"}</td>
+                <td>${player?.name ?? "Ismeretlen"}</td>
+                <td>#${player?.number ?? "-"}</td>
+                <td>${player?.class ?? "-"}</td>
+                <td>${station?.name ?? "-"}</td>
                 <td>${p.points ?? 0}</td> <!-- ÚJ -->
                 <td>${new Date(p.timestamp).toLocaleString("hu-HU") || '-'}</td>
                 <td>
@@ -313,8 +341,6 @@
             `;
                     tbody.appendChild(tr);
                 });
-
-                init()
             } catch (err) { console.error(err); }
         }
         // --- SEARCH ---

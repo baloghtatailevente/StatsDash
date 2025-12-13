@@ -33,9 +33,27 @@ function broadcastUpdate() {
     io.emit('stationsUpdated');
 }
 
+async function initSystemReq() {
+    if (process.env.VALIDATION_PLAYERS && process.env.VALIDATION_POINTS) {
+        const axios = require('axios');
+
+        try {
+            const playersResponse = await axios.get(process.env.VALIDATION_PLAYERS);
+            const pointsResponse = await axios.get(process.env.VALIDATION_POINTS);
+
+            console.log(`✅ Rendszerkövetelmények ellenőrizve: ${playersResponse.status} a játékosokhoz, ${pointsResponse.status} a pontokhoz.`);
+        } catch (error) {
+            console.error("❌ Hiba a rendszerkövetelmények ellenőrzésekor:", error.message);
+        }
+}
+}
+
 
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB kapcsolódva'))
+    .then(async () => {
+        console.log('MongoDB kapcsolódva');
+        await initSystemReq();
+    })
     .catch(err => console.error('MongoDB hiba:', err));
 
 app.get('/api', (req, res) => {
@@ -155,6 +173,21 @@ app.post('/api/admin-login', async (req, res) => {
         user.last_login = new Date();
         await user.save();
         await LoginLog.create({ user: user._id, success: true, ip });
+        
+        const result = await sendMail({
+            to: user.email,
+            subject: "Új bejelentkezés",
+            text: `Új bejelentkezést észleltünk a fiókodba.\n\nFelhasználó: ${user.username}\nIP: ${ip}\nIdőpont: ${new Date().toLocaleString("hu-HU")}`,
+            html: `
+        <h3>Új bejelentkezést észleltünk (ADMINISZTÁTORI KÓDDAL)</h3>
+        <p><b>Felhasználó:</b> ${user.username}</p>
+        <p><b>IP cím:</b> ${ip}</p>
+        <p><b>Időpont:</b> ${new Date().toLocaleString("hu-HU")}</p>
+        <p>Ha ez nem te voltál, <a href="#">változtasd meg a jelszavadat!</a></p>
+      `,
+        });
+
+        if (!result.success) console.error("Email küldési hiba:", result.error);
 
         res.status(200).json({ message: 'Sikeres bejelentkezés kóddal', sessionId });
     } catch (err) {
@@ -733,6 +766,8 @@ app.get("/dashboard/admin/login-logs", (req, res) => {
 app.get("/dashboard/admin/points-logs", (req, res) => {
     res.sendFile(__dirname + "/public/app/pointlogs.html")
 })
+
+
 // TEMORARLY
 
 app.get("*", (req, res) => {
