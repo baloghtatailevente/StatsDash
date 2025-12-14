@@ -34,7 +34,7 @@ function broadcastUpdate() {
 }
 
 async function initSystemReq() {
-    if (process.env.VALIDATION_PLAYERS && process.env.VALIDATION_POINTS) {
+    /*/if (process.env.VALIDATION_PLAYERS && process.env.VALIDATION_POINTS) {
         const axios = require('axios');
 
         try {
@@ -45,7 +45,7 @@ async function initSystemReq() {
         } catch (error) {
             console.error("❌ Hiba a rendszerkövetelmények ellenőrzésekor:", error.message);
         }
-}
+}/*/
 }
 
 
