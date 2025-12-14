@@ -1,22 +1,15 @@
 // mailer.js
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 /**
- * Create reusable transporter object using SMTP transport
- * Supports Gmail, Outlook, or custom SMTP services
+ * Resend client
+ * Uses RESEND_API_KEY from environment variables
  */
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 465,
-  secure: true, // true for port 465, false for 587
-  auth: {
-    user: process.env.SMTP_USER, // your email address
-    pass: process.env.SMTP_PASS, // your email password or app password
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Send an email
+ * Interface is kept IDENTICAL so no other code needs to change
  * @param {Object} options
  * @param {string} options.to - Recipient email
  * @param {string} options.subject - Subject line
@@ -25,14 +18,15 @@ const transporter = nodemailer.createTransport({
  */
 async function sendMail({ to, subject, text, html }) {
   try {
-    const info = await transporter.sendMail({
-      from: `"${process.env.SMTP_NAME}" <${process.env.SMTP_USER}>`,
+    const info = await resend.emails.send({
+      from: "StatsDash <noreply@statsdash.hu>",
       to,
       subject,
       text,
       html,
     });
-    console.log("Email sent:", info.messageId);
+
+    console.log("Email sent:", info.id);
     return { success: true, info };
   } catch (err) {
     console.error("Email error:", err);
